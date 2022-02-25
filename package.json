@@ -1,0 +1,32 @@
+{
+  "name": "vue-node-js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@vuelidate/core": "*",
+    "@vuelidate/validators": "*",
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "esm": "^3.2.25",
+    "express": "^4.17.2",
+    "moment": "^2.29.1",
+    "mongodb": "^4.3.1",
+    "mongoose": "^6.2.1",
+    "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "node-env-run": "^4.0.2",
+    "nodemon": "^2.0.15"
+  }
+}
