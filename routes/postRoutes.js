@@ -1,8 +1,9 @@
 
-const { Router } = require('express');
 const PostsController  = require("../controllers/PostsController");
+const { requireAuth } = require("../middlwares/AuthMiddlware");
+const { Router } = require('express');
 const router = Router();
 
-router.get("/posts", PostsController.getPosts);
+router.get("/posts", requireAuth,  PostsController.getPosts);
 
-module.exports = router;
+module.exports = router;     
