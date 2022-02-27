@@ -1,0 +1,22 @@
+module.exports = {
+  required: `Field is required`,
+  remote: "Please fix this field.",
+  mobile: "Please enter a valid mobile number",
+  email: "Please enter a valid email address.",
+  url: "Please enter a valid URL.",
+  uuid: "Please enter a valid UUID.",
+  date: "Please enter a valid date.",
+  dateISO: "Please enter a valid date (ISO).",
+  number: "Please enter a valid number.",
+  digits: "Please enter only digits.",
+  creditCard: "Please enter a valid credit card number.",
+  equalTo: "Please enter the same value again.",
+  accept: "Please enter a value with a valid extension.",
+  maxlength: length => `Please enter no more than ${length} characters.`,
+  minlength: length => `Please enter at least ${length} characters.`,
+  rangeLength: (min, max) => `Please enter a value between ${min} and ${max} characters long.`,
+  range: (min, max) => `Please enter a value between ${min} and ${max}.`,
+  max: max => `Please enter a value less than or equal to ${max}.`,
+  min: min => `Please enter a value greater than or equal to ${min}.`,
+  boolean: `Please enter a valid boolean value`
+};

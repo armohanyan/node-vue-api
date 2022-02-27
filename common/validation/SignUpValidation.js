@@ -1,33 +1,38 @@
 const {
-    check
+  check
 } = require('express-validator');
 
+const validationMessage = require('../validationMessage');
+
 const validator = {
-    validateFirstName: check("firstName")
-        .isLength({
-            min: 3
-        }).withMessage("Minum characters must be at 3"),
+  validateFirstName: check("firstName")
+    .trim()
+    .not()
+    .isEmpty().withMessage(validationMessage.required)
+    .isLength({ min: 3 }).withMessage(validationMessage.min(3)),
 
-    validateLastName: check("lastName")
-        .isLength({
-            min: 3
-        }).withMessage("Minum characters must be at 3"),
+  validateLastName: check("lastName")
+    .trim()
+    .not()
+    .isEmpty().withMessage(validationMessage.required)
+    .isLength({ min: 3 }).withMessage(validationMessage.min(3)),
 
-    validateEmail: check('email')
-        .trim()
-        .normalizeEmail()
-        .isEmail()
-        .withMessage('Invalid email'),
+  validateEmail: check('email')
+    .trim()
+    .normalizeEmail()
+    .isEmail()
+    .withMessage(validationMessage.email),
 
-    validatePassword: check("password")
-        .isLength({
-            min: 5
-        }).withMessage("Minum characters must be at 5"),
+  validatePassword: check("password")
+    .trim()
+    .not()
+    .isEmpty().withMessage(validationMessage.required)
+    .isLength({ min: 5 }).withMessage(validationMessage.min(5)),
 }
 
 module.exports = [
-    validator.validateFirstName,
-    validator.validateLastName,
-    validator.validateEmail,
-    validator.validatePassword
+  validator.validateFirstName,
+  validator.validateLastName,
+  validator.validateEmail,
+  validator.validatePassword
 ];

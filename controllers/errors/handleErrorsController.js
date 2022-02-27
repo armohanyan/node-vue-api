@@ -1,12 +1,8 @@
-class handleErrors {
-
-    // return errors
-    static handleErrors({errors}) {
-        const filteredError = {}; 
-        errors.forEach(error => {
-            filteredError[error.param] = error.msg 
-        });
-        return filteredError;
+function handleErrors({ errors }) {
+    const error = errors[0];
+    return {
+      property: error.param,
+      message: error.msg
     }
 }
 
