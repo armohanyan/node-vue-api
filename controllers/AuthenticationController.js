@@ -11,6 +11,11 @@ class AuthenticationController {
         const data  = await AuthService.signIn(req);
         res.status(data.statusCode).json(data);
     }
+
+    async verifyEmail(req, res) {
+        const data = await (new AuthService).verifyEmail(req);
+        res.status(data.statusCode).json(data);
+    }
 }
 
 module.exports = AuthenticationController;

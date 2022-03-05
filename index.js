@@ -27,7 +27,7 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: ['http://localhost:8080']
+    origin: ['http://localhost:8086', 'http://localhost:8080']
 }))
 
 // use routes   
