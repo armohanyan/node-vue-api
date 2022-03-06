@@ -12,3 +12,4 @@ router.post("/sign-up", SignUpValidation, AuthenticationController.signUp);
 router.post("/sign-in", SignInValidation, AuthenticationController.signIn);
 
 module.exports = router;
+    
