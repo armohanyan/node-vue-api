@@ -1,4 +1,5 @@
 const AuthService = require('../services/AuthService');
+const authSerive = (new AuthService);
 
 class AuthenticationController {
 
@@ -9,6 +10,11 @@ class AuthenticationController {
 
     static async signIn(req, res) {
         const data  = await AuthService.signIn(req);
+        res.status(data.statusCode).json(data);
+    }
+
+    async verifyEmail(req, res) {
+        const data = await authSerive.verifyEmail(req);
         res.status(data.statusCode).json(data);
     }
 }

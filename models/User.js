@@ -13,6 +13,13 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
+  },
+  confirmationToken: {
+    type: String
+  },
+  isVerified: {
+    type: Boolean, 
+    default: false
   }
 });
 
