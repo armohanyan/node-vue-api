@@ -19,6 +19,7 @@ const createToken = (id) => {
   });
 }
 
+const mailService = (new MailService);
 
 module.exports = class AuthService {
   constructor() {}
@@ -64,7 +65,7 @@ module.exports = class AuthService {
 
     // send email verification  
     const url = `http://localhost:8080/verify-email/${confirmationToken}`;
-    (new MailService).sendMail(email, url);
+    mailService.sendMail(email, url);
 
     const createUser = await userModel.create({
       confirmationToken,
@@ -137,6 +138,7 @@ module.exports = class AuthService {
         success: false
       })
     }
+    
     await userModel.updateOne({
       _id: user._id,
       isVerified: true
