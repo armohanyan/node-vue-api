@@ -1,15 +1,18 @@
 const handleErrors = require("../controllers/errors/handleErrorsController");
 const ResponseMessage = require('../common/ResponseMessage');
-const nodemailer = require("nodemailer");
-const {
-  validationResult
-} = require('express-validator');
+const { validationResult } = require('express-validator');
 const userModel = require('../models/User');
-const MailService = require('./mailService');
 const jwt = require('jsonwebtoken');
+
+// Services
+const MailService = require('./mailService');
+const CacheService = require('../services/CacheService');
 const bcrypt = require("bcrypt");
+const cacheService = CacheService;
+const mailService = (new MailService);
 
 const createToken = (id) => {
+
   return jwt.sign({
     id,
     createdAt: Date.now()
@@ -19,8 +22,7 @@ const createToken = (id) => {
   });
 }
 
-const mailService = (new MailService);
-
+// ---------------------------------
 module.exports = class AuthService {
   constructor() {}
 
@@ -63,8 +65,13 @@ module.exports = class AuthService {
       algorithm: 'HS256'
     });
 
-    // send email verification  
+    // send email verification
     const url = `http://localhost:8080/verify-email/${confirmationToken}`;
+
+    // email verification using redis
+    // const url = `http://localhost:8080/verify-email/${email}`;
+    // await cacheService.setToken(email, confirmationToken);
+
     mailService.sendMail(email, url);
 
     const createUser = await userModel.create({
@@ -138,7 +145,7 @@ module.exports = class AuthService {
         success: false
       })
     }
-    
+
     await userModel.updateOne({
       _id: user._id,
       isVerified: true
@@ -149,4 +156,48 @@ module.exports = class AuthService {
       statusCode: 200,
     })
   }
+
+  //verify email using REDIS
+  async verifyEmailByRedis(req) {
+    const { email } = req.query;
+
+    const user = await userModel.findOne({
+      email
+    });
+
+    if (!user) {
+        return ResponseMessage({
+          message: "User Not Found",
+          statusCode: 404,
+          success: false
+        })
+    }
+
+    if (user.isVerified) {
+      return ResponseMessage({
+        message: "User have already verified",
+        statusCode: 201
+      })
+    }
+
+    const response = await cacheService.getToken(email);
+
+    if (!response) {
+      return ResponseMessage({
+        message: "Invalid or expired token",
+        statusCode: 401,
+        success: false
+      })
+    }
+
+    await userModel.updateOne({
+      email: email,
+      isVerified: true
+    });
+
+    return ResponseMessage({
+      success: true,
+      statusCode: 201,
+    })
+  };
 }

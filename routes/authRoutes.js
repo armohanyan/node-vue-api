@@ -11,5 +11,7 @@ const router = Router();
 router.post("/sign-up", SignUpValidation, AuthenticationController.signUp);
 router.post("/sign-in", SignInValidation, AuthenticationController.signIn);
 router.get("/verify-email", authenticationController.verifyEmail);
+// email verification using redis
+router.get("/verify-email", authenticationController.verifyEmailByRedis);
 
 module.exports = router;

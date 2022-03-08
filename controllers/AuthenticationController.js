@@ -17,6 +17,11 @@ class AuthenticationController {
         const data = await authSerive.verifyEmail(req);
         res.status(data.statusCode).json(data);
     }
+    // verify using Redis
+    async verifyEmailByRedis(req, res) {
+        const data = await authSerive.verifyEmailByRedis(req);
+        res.status(data.statusCode).json(data);
+    }
 }
 
 module.exports = AuthenticationController;

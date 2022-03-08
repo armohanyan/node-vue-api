@@ -10,13 +10,13 @@ const port = process.env.PORT || 3000;
 
 // routes 
 const postRoutes = require("./routes/postRoutes");
-const authRoutes = require("./routes/authRoutes");
-
+const authRoutes  = require("./routes/authRoutes");
+const { logging } = require('googleapis/build/src/apis/logging')
 
 // database
 mongoose.connect(process.env.DB_URL)
-.then(() => console.log("Successfully connected database"))
-.catch(err => console.log(err));
+  .then(() => console.log("Successfully connected database"))
+  .catch(err => console.log(err));
 
 // ----------------------------------------
 
@@ -26,8 +26,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(cors({
-    credentials: true,
-    origin: ['http://localhost:8086', 'http://localhost:8080']
+  credentials: true,
+  origin: [ 'http://localhost:8080' ]
 }))
 
 // use routes   
