@@ -25,7 +25,23 @@ const createToken = (id) => {
 module.exports = class AuthService {
   constructor () {}
 
-  static async signUp (req) {
+  sendMail ({ email, subject, purpose }) {
+    // token for confirmaiton token
+    const confirmationToken = jwt.sign({
+      email: email
+    }, process.env.JWT_EMAIL_SECRET, {
+      expiresIn: 60 * 60,
+      algorithm: 'HS256'
+    })
+
+    // send email verification
+    const url = `${process.env.SITE_URL}/verify-email/${email}/${confirmationToken}`
+    mailService.sendMail(email, url, subject, purpose)
+
+    return confirmationToken
+  }
+
+  async signUp (req) {
     const {
       email,
       password,
@@ -56,22 +72,11 @@ module.exports = class AuthService {
       })
     }
 
-    // token for confirmaiton token
-    const confirmationToken = jwt.sign({
-      email: email
-    }, process.env.JWT_EMAIL_SECRET, {
-      expiresIn: 60 * 60,
-      algorithm: 'HS256'
+    const confirmationToken = this.sendMail({
+      email: email,
+      subject: 'Email verification',
+      purpose: 'Please click to verify your email'
     })
-
-    // send email verification
-    const url = `http://localhost:8080/verify-email/${confirmationToken}`
-
-    // email verification using redis
-    // const url = `http://localhost:8080/verify-email/${email}`;
-    // await cacheService.setToken(email, confirmationToken);
-
-    mailService.sendMail(email, url)
 
     const createUser = await userModel.create({
       confirmationToken,
@@ -91,9 +96,9 @@ module.exports = class AuthService {
         token
       }
     })
-  }
+  };
 
-  static async signIn (req) {
+  async signIn (req) {
     const {
       email,
       password
@@ -129,13 +134,14 @@ module.exports = class AuthService {
       message: 'Incorrect email and/or password.',
       success: false
     })
-  }
+  };
 
   async verifyEmail (req) {
-    const confirmationToken = req.query.confirmationToken
+    const { email, confirmationToken } = req.query
 
     const user = await userModel.findOne({
-      confirmationToken: confirmationToken
+      email,
+      confirmationToken
     })
 
     if (!user) {
@@ -145,6 +151,10 @@ module.exports = class AuthService {
         success: false
       })
     }
+    // todo: continue to work with jwt.verify
+    // jwt.verify(confirmationToken, process.env.JWT_EMAIL_SECRET, (err, decoded) => {
+    //   console.log(err, decoded)
+    // });
 
     await userModel.updateOne({
       _id: user._id,
@@ -155,34 +165,7 @@ module.exports = class AuthService {
       success: true,
       statusCode: 200,
     })
-  }
-
-  async resendToken(req) {
-    const email = req.query.email
-
-    // token for confirmaiton token
-    const confirmationToken = jwt.sign({
-      email: email
-    }, process.env.JWT_EMAIL_SECRET, {
-      expiresIn: 60 * 60,
-      algorithm: 'HS256'
-    })
-
-    // send email verification
-    const url = `http://localhost:8080/verify-email/${confirmationToken}`
-
-    mailService.sendMail(email, url)
-
-    await userModel.updateOne({
-      email,
-      confirmationToken
-    })
-
-    return ResponseMessage({
-      message: 'Token was sent to email',
-      statusCode: 200
-    })
-  }
+  };
 
   //verify email using REDIS
   async verifyEmailByRedis (req) {
@@ -227,4 +210,91 @@ module.exports = class AuthService {
       statusCode: 201,
     })
   };
+
+  async resendVerificationToken (req) {
+    const email = req.query.email
+
+    const confirmationToken = this.sendMail({
+       email,
+      subject: 'Email verification',
+      purpose: 'Please click to verify your email'
+    })
+
+    await userModel.updateOne({
+      email,
+      confirmationToken
+    })
+
+    return ResponseMessage({
+      message: 'Token was sent to email',
+      statusCode: 200
+    })
+  };
+
+  async requestResendPassword (req) {
+    const email = req.query.email
+
+    const user = await userModel.findOne({ email })
+
+    if (!user) {
+      return ResponseMessage({
+        statusCode: 401,
+        message: 'Incorrect email',
+        success: false
+      })
+    }
+
+    const confirmationToken = this.sendMail({
+      email,
+      subject: 'Resend Password',
+      purpose: 'Please click to resend password'
+    })
+
+    await userModel.updateOne({
+      email,
+      confirmationToken
+    })
+
+    return ResponseMessage({
+      statusCode: 200,
+      message: 'Token was send to email'
+    })
+  }
+
+  async resendPassword (req) {
+    const { email, password } = req.body
+
+    const user = await userModel.findOne({
+      email
+    })
+
+    if (!user) {
+      return ResponseMessage({
+        message: 'User Not Found',
+        statusCode: 404,
+        success: false
+      })
+    }
+
+    // check is some fields is invalid return response
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const filteredErrors = handleErrors(errors)
+
+      return ResponseMessage({
+        statusCode: 400,
+        validationError: filteredErrors
+      })
+    }
+
+    await userModel.updateOne({
+      email,
+      password
+    });
+
+    return ResponseMessage({
+      statusCode: 204, // todo: review status code
+      message: "Password reset successfully"
+    })
+  }
 }
