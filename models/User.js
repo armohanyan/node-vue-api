@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -15,19 +15,26 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
   confirmationToken: {
-    type: String
+    type: String,
+    default: null
   },
   isVerified: {
-    type: Boolean, 
+    type: Boolean,
     default: false
   }
-});
+})
 
-userSchema.pre("save", async function (next) {
-  this.password = bcrypt.hashSync(this.password, 12);
-  next();
-});
+userSchema.pre('save', async function (next) {
+  this.password = bcrypt.hashSync(this.password, 12)
+  next()
+})
 
-const User = mongoose.model("user", userSchema);
+userSchema.pre('updateOne', async function (next) {
+  const updatedData = this.getUpdate()
+  if (updatedData.password) updatedData.password = bcrypt.hashSync(updatedData.password, 12);
+  next()
+})
 
-module.exports = User;
+const User = mongoose.model('user', userSchema)
+
+module.exports = User
