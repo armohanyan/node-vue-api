@@ -15,7 +15,7 @@ const authRoutes  = require("./routes/authRoutes");
 // database
 mongoose.connect(process.env.DB_URL)
   .then(() => console.log("Successfully connected database"))
-  .catch(err => console.log(err));
+  .catch(err => { throw err })
 
 // ----------------------------------------
 
