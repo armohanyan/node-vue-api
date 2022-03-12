@@ -13,55 +13,61 @@ module.exports = class AuthService extends BaseService {
   }
 
   async signUp(req) {
-    const { email, password, firstName, lastName } = req.body;
+    try {
 
-    const err = this.handleErrors(req);
-    if(err.hasErrors) { return err.body; }
+      const { email, password, firstName, lastName } = req.body;
 
-    const user = await userModel.findOne({ email }).exec();
+      const err = this.handleErrors(req);
+      if(err.hasErrors) { return err.body; }
 
-    if(user) {
+      const user = await userModel.findOne({ email }).exec();
+
+      if(user) {
+        return this.responseMessage({
+          message: 'User already registered',
+          statusCode: 409
+        });
+      }
+
+      const confirmationToken = createToken(
+        { email: email },
+        process.env.JWT_EMAIL_SECRET,
+        { expiresIn: 60 * 60 });
+
+      const createUser = await userModel.create({
+        confirmationToken,
+        firstName,
+        lastName,
+        password,
+        email
+      });
+
+      if(createUser) {
+        const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+        mailService.sendMail(
+          email,
+          url,
+          'Email verification',
+          'Please click to verify your email'
+        );
+
+        const token = createToken(createUser.id);
+
+        return this.responseMessage({
+          message: 'User registered.',
+          statusCode: 201,
+          data: {
+            token
+          }
+        });
+      }
+    } catch(err) {
       return this.responseMessage({
-        message: 'User already registered',
-        statusCode: 409,
+        message: 'Try again',
+        statusCode: 500
       });
     }
-
-    const confirmationToken = createToken(
-      { email: email },
-      process.env.JWT_EMAIL_SECRET,
-      { expiresIn: 60 * 60 });
-
-    const createUser = await userModel.create({
-      confirmationToken,
-      firstName,
-      lastName,
-      password,
-      email,
-    });
-
-    if(createUser) {
-      const url = `verify-email?email=${email}&token=${confirmationToken}`;
-
-      mailService.sendMail(
-        email,
-        url,
-        'Email verification',
-        'Please click to verify your email',
-      );
-
-      const token = createToken(createUser.id);
-
-      return this.responseMessage({
-        message: 'User registered.',
-        statusCode: 201,
-        data: {
-          token,
-        },
-      });
-    }
-
-    return {};
   };
 
   async signIn(req) {
@@ -79,15 +85,15 @@ module.exports = class AuthService extends BaseService {
           token,
           firstName: user.firstName,
           lastName: user.lastName,
-          email: user.email,
-        },
+          email: user.email
+        }
       });
     }
 
     return this.responseMessage({
       statusCode: 401,
       message: 'Incorrect email and/or password.',
-      success: false,
+      success: false
     });
   };
 
@@ -102,26 +108,26 @@ module.exports = class AuthService extends BaseService {
         return this.responseMessage({
           message: 'User Not Found',
           statusCode: 404,
-          success: false,
+          success: false
         });
       }
 
       await userModel.updateOne({
         _id: user._id,
         isVerified: true,
-        confirmationToken: null,
+        confirmationToken: null
       });
 
       return this.responseMessage({
         success: true,
         statusCode: 200,
-        message: 'Email successfully confirmed.',
+        message: 'Email successfully confirmed.'
       });
     } else {
       return this.responseMessage({
         success: false,
         message: 'Invalid or expire token',
-        statusCode: 401,
+        statusCode: 401
       });
     }
   };
@@ -140,25 +146,25 @@ module.exports = class AuthService extends BaseService {
 
       await userModel.updateOne({
         email,
-        confirmationToken,
+        confirmationToken
       });
 
       mailService.sendMail(
         email,
         url,
         'Email verification',
-        'Please click to verify your email',
+        'Please click to verify your email'
       );
 
       return this.responseMessage({
         message: 'Token was sent to email',
-        statusCode: 200,
+        statusCode: 200
       });
     } else {
       return this.responseMessage({
         message: 'User Not Found',
         statusCode: 404,
-        success: false,
+        success: false
       });
     }
   };
