@@ -30,7 +30,7 @@ module.exports = class AuthService extends BaseService {
       }
 
       const confirmationToken = createToken(
-        { email: email },
+        { email },
         process.env.JWT_EMAIL_SECRET,
         { expiresIn: 60 * 60 });
 
@@ -52,7 +52,7 @@ module.exports = class AuthService extends BaseService {
           'Please click to verify your email'
         );
 
-        const token = createToken(createUser.id);
+        const token = createToken({ id: createUser.id });
 
         return this.responseMessage({
           message: 'User registered.',
