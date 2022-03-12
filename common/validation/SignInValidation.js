@@ -1,21 +1,14 @@
-const {
-  check
-} = require('express-validator');
-const validationMessage = require("../validationMessage");
+const { body } = require('express-validator');
+const validationMessage = require('../validationMessage');
 
-const validator = {
-  validateEmail: check('email')
+module.exports = [
+  body('email')
     .trim()
-    .normalizeEmail()
     .isEmail()
     .withMessage(validationMessage.email),
 
-  validatePassword: check("password")
+  body('password')
     .trim()
-    .isLength({ min: 5 }).withMessage(validationMessage.min(5)),
-}
-
-module.exports = [
-  validator.validateEmail,
-  validator.validatePassword
+    .isLength({ min: 5 })
+    .withMessage(validationMessage.min(5))
 ];

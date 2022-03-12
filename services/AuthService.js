@@ -1,300 +1,166 @@
-const handleErrors = require('../controllers/errors/handleErrorsController')
-const ResponseMessage = require('../common/ResponseMessage')
-const { validationResult } = require('express-validator')
-const userModel = require('../models/User')
-const jwt = require('jsonwebtoken')
+const userModel = require('../models/User');
 
 // Services
-const MailService = require('./mailService')
-const CacheService = require('../services/CacheService')
-const bcrypt = require('bcrypt')
-const cacheService = CacheService
-const mailService = new MailService()
+const MailService = require('./mailService');
+const bcrypt = require('bcrypt');
+const mailService = new MailService();
+const BaseService = require('./BaseService');
+const { createToken, verifyToken } = require('../common/token');
 
-const createToken = (id) => {
-
-  return jwt.sign({
-    id,
-    createdAt: Date.now()
-  }, process.env.JWT_SECRET, {
-    expiresIn: 3 * 24 * 60 * 60,
-    algorithm: 'HS256'
-  })
-}
-
-module.exports = class AuthService {
-  constructor () {}
-
-  sendMail ({ email, subject, purpose }) {
-    // token for confirmaiton token
-    const confirmationToken = jwt.sign({
-      email: email
-    }, process.env.JWT_EMAIL_SECRET, {
-      expiresIn: 60 * 60,
-      algorithm: 'HS256'
-    })
-
-    // send email verification
-    const url = `${process.env.SITE_URL}/verify-email/${email}/${confirmationToken}`
-    mailService.sendMail(email, url, subject, purpose)
-
-    return confirmationToken
+module.exports = class AuthService extends BaseService {
+  constructor() {
+    super();
   }
 
-  async signUp (req) {
-    const {
-      email,
-      password,
-      firstName,
-      lastName
-    } = req.body
+  async signUp(req) {
+    const { email, password, firstName, lastName } = req.body;
 
-    // check is some fields is invalid return response
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
+    const err = this.handleErrors(req);
+    if(err.hasErrors) { return err.body; }
 
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
-    }
+    const user = await userModel.findOne({ email }).exec();
 
-    // if there are not invalid fields continue to create
-    const user = await userModel.findOne({
-      email
-    })
-
-    if (user) {
-      return ResponseMessage({
+    if(user) {
+      return this.responseMessage({
         message: 'User already registered',
-        statusCode: 409
-      })
+        statusCode: 409,
+      });
     }
 
-    const confirmationToken = this.sendMail({
-      email: email,
-      subject: 'Email verification',
-      purpose: 'Please click to verify your email'
-    })
+    const confirmationToken = createToken(
+      { email: email },
+      process.env.JWT_EMAIL_SECRET,
+      { expiresIn: 60 * 60 });
 
     const createUser = await userModel.create({
       confirmationToken,
       firstName,
       lastName,
       password,
-      email
-    })
-
-    // create jwt token
-    const token = createToken(createUser.id)
-
-    return ResponseMessage({
-      message: 'User registered.',
-      statusCode: 201,
-      data: {
-        token
-      }
-    })
-  };
-
-  async signIn (req) {
-    const {
       email,
-      password
-    } = req.body
-
-    // check is some fields is invalid return response
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
-
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
-    }
-    // if there are not invalid fields continue to find user
-    const user = await userModel.findOne({
-      email
-    })
-
-    if (user && bcrypt.compareSync(password, user.password)) {
-      const token = createToken(user._id)
-      return ResponseMessage({
-        data: {
-          token,
-          user
-        }
-      })
-    }
-
-    return ResponseMessage({
-      statusCode: 401,
-      message: 'Incorrect email and/or password.',
-      success: false
-    })
-  };
-
-  async verifyEmail (req) {
-    const { email, confirmationToken } = req.query
-
-    const user = await userModel.findOne({
-      email,
-      confirmationToken
-    })
-
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
-        success: false
-      })
-    }
-    // todo: continue to work with jwt.verify
-    // jwt.verify(confirmationToken, process.env.JWT_EMAIL_SECRET, (err, decoded) => {
-    //   console.log(err, decoded)
-    // });
-
-    await userModel.updateOne({
-      _id: user._id,
-      isVerified: true
-    })
-
-    return ResponseMessage({
-      success: true,
-      statusCode: 200,
-    })
-  };
-
-  //verify email using REDIS
-  async verifyEmailByRedis (req) {
-    const { email, confirmationToken } = req.query
-
-    const user = await userModel.findOne({
-      email
-    })
-
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
-        success: false
-      })
-    }
-
-    if (user.isVerified) {
-      return ResponseMessage({
-        message: 'User have already verified',
-        statusCode: 201
-      })
-    }
-
-    const response = await cacheService.getToken(email)
-
-    if (!response === confirmationToken) {
-      return ResponseMessage({
-        message: 'Invalid or expired token',
-        statusCode: 401,
-        success: false
-      })
-    }
-
-    await userModel.updateOne({
-      email: email,
-      isVerified: true
-    })
-
-    return ResponseMessage({
-      success: true,
-      statusCode: 201,
-    })
-  };
-
-  async resendVerificationToken (req) {
-    const email = req.query.email
-
-    const confirmationToken = this.sendMail({
-       email,
-      subject: 'Email verification',
-      purpose: 'Please click to verify your email'
-    })
-
-    await userModel.updateOne({
-      email,
-      confirmationToken
-    })
-
-    return ResponseMessage({
-      message: 'Token was sent to email',
-      statusCode: 200
-    })
-  };
-
-  async requestResendPassword (req) {
-    const email = req.query.email
-
-    const user = await userModel.findOne({ email })
-
-    if (!user) {
-      return ResponseMessage({
-        statusCode: 401,
-        message: 'Incorrect email',
-        success: false
-      })
-    }
-
-    const confirmationToken = this.sendMail({
-      email,
-      subject: 'Resend Password',
-      purpose: 'Please click to resend password'
-    })
-
-    await userModel.updateOne({
-      email,
-      confirmationToken
-    })
-
-    return ResponseMessage({
-      statusCode: 200,
-      message: 'Token was send to email'
-    })
-  }
-
-  async resendPassword (req) {
-    const { email, password } = req.body
-
-    const user = await userModel.findOne({
-      email
-    })
-
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
-        success: false
-      })
-    }
-
-    // check is some fields is invalid return response
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
-
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
-    }
-
-    await userModel.updateOne({
-      email,
-      password
     });
 
-    return ResponseMessage({
-      statusCode: 204, // todo: review status code
-      message: "Password reset successfully"
-    })
-  }
-}
+    if(createUser) {
+      const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+      mailService.sendMail(
+        email,
+        url,
+        'Email verification',
+        'Please click to verify your email',
+      );
+
+      const token = createToken(createUser.id);
+
+      return this.responseMessage({
+        message: 'User registered.',
+        statusCode: 201,
+        data: {
+          token,
+        },
+      });
+    }
+
+    return {};
+  };
+
+  async signIn(req) {
+    const { email, password } = req.body;
+
+    const err = this.handleErrors(req);
+    if(err.hasErrors) { return err.body; }
+
+    const user = await userModel.findOne({ email }).exec();
+
+    if(user && bcrypt.compareSync(password, user.password)) {
+      const token = createToken({ id: user._id });
+      return this.responseMessage({
+        data: {
+          token,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        },
+      });
+    }
+
+    return this.responseMessage({
+      statusCode: 401,
+      message: 'Incorrect email and/or password.',
+      success: false,
+    });
+  };
+
+  async verifyEmail(req) {
+    const { email, token } = req.query;
+
+    if(token && verifyToken(token, process.env.JWT_EMAIL_SECRET)) {
+
+      const user = await userModel.findOne({ email, confirmationToken: token }).exec();
+
+      if(!user) {
+        return this.responseMessage({
+          message: 'User Not Found',
+          statusCode: 404,
+          success: false,
+        });
+      }
+
+      await userModel.updateOne({
+        _id: user._id,
+        isVerified: true,
+        confirmationToken: null,
+      });
+
+      return this.responseMessage({
+        success: true,
+        statusCode: 200,
+        message: 'Email successfully confirmed.',
+      });
+    } else {
+      return this.responseMessage({
+        success: false,
+        message: 'Invalid or expire token',
+        statusCode: 401,
+      });
+    }
+  };
+
+  async resendVerificationToken(req) {
+    const email = req.query.email;
+
+    const user = await userModel.findOne({ email }).exec();
+    if(user) {
+      const confirmationToken = createToken(
+        { email },
+        process.env.JWT_EMAIL_SECRET,
+        { expiresIn: 60 * 60 });
+
+      const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+      await userModel.updateOne({
+        email,
+        confirmationToken,
+      });
+
+      mailService.sendMail(
+        email,
+        url,
+        'Email verification',
+        'Please click to verify your email',
+      );
+
+      return this.responseMessage({
+        message: 'Token was sent to email',
+        statusCode: 200,
+      });
+    } else {
+      return this.responseMessage({
+        message: 'User Not Found',
+        statusCode: 404,
+        success: false,
+      });
+    }
+  };
+
+};
