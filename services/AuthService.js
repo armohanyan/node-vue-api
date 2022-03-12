@@ -52,7 +52,7 @@ module.exports = class AuthService extends BaseService {
           'Please click to verify your email'
         );
 
-        const token = createToken({ id: createUser.id });
+        const token = createToken({ id: createUser._id });
 
         return this.responseMessage({
           message: 'User registered.',
