@@ -5,14 +5,14 @@ const requireAuth = (req, res, next) => {
 
   if(token) {
     try {
-      const data = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-      res.locals.user = data;
+      res.locals.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       next();
     } catch(err) {
       res.status(401).send('Unauthorized');
     }
+  } else {
+    res.status(401).send('Unauthorized');
   }
-  res.status(401).send('Unauthorized');
 
 };
 
