@@ -1,300 +1,292 @@
-const handleErrors = require('../controllers/errors/handleErrorsController')
-const ResponseMessage = require('../common/ResponseMessage')
-const { validationResult } = require('express-validator')
-const userModel = require('../models/User')
-const jwt = require('jsonwebtoken')
+const userModel = require('../models/User');
 
-// Services
-const MailService = require('./mailService')
-const CacheService = require('../services/CacheService')
-const bcrypt = require('bcrypt')
-const cacheService = CacheService
-const mailService = new MailService()
+const MailService = require('./mailService');
+const bcrypt = require('bcrypt');
+const mailService = new MailService();
+const BaseService = require('./BaseService');
+const { createToken, verifyToken } = require('../common/token');
 
-const createToken = (id) => {
-
-  return jwt.sign({
-    id,
-    createdAt: Date.now()
-  }, process.env.JWT_SECRET, {
-    expiresIn: 3 * 24 * 60 * 60,
-    algorithm: 'HS256'
-  })
-}
-
-module.exports = class AuthService {
-  constructor () {}
-
-  sendMail ({ email, subject, purpose }) {
-    // token for confirmaiton token
-    const confirmationToken = jwt.sign({
-      email: email
-    }, process.env.JWT_EMAIL_SECRET, {
-      expiresIn: 60 * 60,
-      algorithm: 'HS256'
-    })
-
-    // send email verification
-    const url = `${process.env.SITE_URL}/verify-email/${email}/${confirmationToken}`
-    mailService.sendMail(email, url, subject, purpose)
-
-    return confirmationToken
+module.exports = class AuthService extends BaseService {
+  constructor() {
+    super();
   }
 
-  async signUp (req) {
-    const {
-      email,
-      password,
-      firstName,
-      lastName
-    } = req.body
+  async signUp(req) {
 
-    // check is some fields is invalid return response
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
+    try {
+      const { email, password, firstName, lastName } = req.body;
 
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
-    }
+      const err = this.handleErrors(req);
+      if(err.hasErrors) { return err.body; }
 
-    // if there are not invalid fields continue to create
-    const user = await userModel.findOne({
-      email
-    })
+      const user = await userModel.findOne({ email }).exec();
 
-    if (user) {
-      return ResponseMessage({
-        message: 'User already registered',
-        statusCode: 409
-      })
-    }
-
-    const confirmationToken = this.sendMail({
-      email: email,
-      subject: 'Email verification',
-      purpose: 'Please click to verify your email'
-    })
-
-    const createUser = await userModel.create({
-      confirmationToken,
-      firstName,
-      lastName,
-      password,
-      email
-    })
-
-    // create jwt token
-    const token = createToken(createUser.id)
-
-    return ResponseMessage({
-      message: 'User registered.',
-      statusCode: 201,
-      data: {
-        token
+      if(user) {
+        return this.responseMessage({
+          message: 'User already registered',
+          statusCode: 409
+        });
       }
-    })
+
+      const confirmationToken = createToken(
+        { email },
+        process.env.JWT_EMAIL_SECRET,
+        { expiresIn: 60 * 60 });
+
+      const createUser = await userModel.create({
+        confirmationToken,
+        firstName,
+        lastName,
+        password,
+        email
+      });
+
+      if(createUser) {
+        const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+        mailService.sendMail(
+          email,
+          url,
+          'Email verification',
+          'Please click to verify your email'
+        );
+
+        const token = createToken({ id: createUser._id });
+
+        return this.responseMessage({
+          statusCode: 201,
+          data: {
+            token
+          },
+          message: 'User registered.'
+        });
+      }
+    } catch(err) {
+      return this.responseMessage({
+        statusCode: 500,
+        message: 'Try again'
+      });
+    }
+
   };
 
-  async signIn (req) {
-    const {
-      email,
-      password
-    } = req.body
+  async signIn(req) {
 
-    // check is some fields is invalid return response
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
+    try {
+      const { email, password } = req.body;
 
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
+      const err = this.handleErrors(req);
+      if(err.hasErrors) { return err.body; }
+
+      const user = await userModel.findOne({ email }).exec();
+
+      if(user && bcrypt.compareSync(password, user.password)) {
+        const token = createToken({ id: user._id });
+        return this.responseMessage({
+          data: {
+            token,
+            user: {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email
+            }
+          }
+        });
+      }
+
+      return this.responseMessage({
+        statusCode: 401,
+        message: 'Incorrect email and/or password.',
+        success: false
+      });
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
+        data: error,
+        success: false
+      });
     }
-    // if there are not invalid fields continue to find user
-    const user = await userModel.findOne({
-      email
-    })
 
-    if (user && bcrypt.compareSync(password, user.password)) {
-      const token = createToken(user._id)
-      return ResponseMessage({
-        data: {
-          token,
-          user
+  };
+
+  async verifyEmail(req) {
+
+    try {
+      const { email, token } = req.query;
+
+      if(token && verifyToken(token, process.env.JWT_EMAIL_SECRET)) {
+
+        const user = await userModel.findOne({ email, confirmationToken: token }).exec();
+
+        if(!user) {
+          return this.responseMessage({
+            message: 'User Not Found',
+            statusCode: 404,
+            success: false
+          });
         }
-      })
-    }
 
-    return ResponseMessage({
-      statusCode: 401,
-      message: 'Incorrect email and/or password.',
-      success: false
-    })
+        await userModel.updateOne({
+          _id: user._id,
+          isVerified: true,
+          confirmationToken: null
+        });
+
+        return this.responseMessage({
+          success: true,
+          statusCode: 200,
+          message: 'Email successfully confirmed.'
+        });
+      } else {
+        return this.responseMessage({
+          success: false,
+          message: 'Invalid or expire token',
+          statusCode: 401
+        });
+      }
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
+        success: false
+      });
+    }
   };
 
-  async verifyEmail (req) {
-    const { email, confirmationToken } = req.query
+  async resendVerificationToken(req) {
 
-    const user = await userModel.findOne({
-      email,
-      confirmationToken
-    })
+    try {
+      const email = req.query.email;
 
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
+      const user = await userModel.findOne({ email }).exec();
+
+      if(user) {
+        const confirmationToken = createToken(
+          { email },
+          process.env.JWT_EMAIL_SECRET,
+          { expiresIn: 60 * 60 });
+
+        const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+        await userModel.updateOne({
+          email,
+          confirmationToken
+        });
+
+        mailService.sendMail(
+          email,
+          url,
+          'Email verification',
+          'Please click to verify your email'
+        );
+
+        return this.responseMessage({
+          message: 'Token was sent to email',
+          statusCode: 200
+        });
+      } else {
+        return this.responseMessage({
+          statusCode: 404,
+          success: false,
+          message: 'User Not Found'
+        });
+      }
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
         success: false
-      })
+      });
     }
-    // todo: continue to work with jwt.verify
-    // jwt.verify(confirmationToken, process.env.JWT_EMAIL_SECRET, (err, decoded) => {
-    //   console.log(err, decoded)
-    // });
 
-    await userModel.updateOne({
-      _id: user._id,
-      isVerified: true
-    })
-
-    return ResponseMessage({
-      success: true,
-      statusCode: 200,
-    })
   };
 
-  //verify email using REDIS
-  async verifyEmailByRedis (req) {
-    const { email, confirmationToken } = req.query
+  async verifyEmailOnResetPassword(req) {
 
-    const user = await userModel.findOne({
-      email
-    })
+    try {
+      const { email } = req.body;
 
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
-        success: false
-      })
+      const user = await userModel.findOne({ email }).exec();
+
+      if(!user) {
+        return this.responseMessage({
+          statusCode: 404,
+          message: 'User Not Found',
+          success: false
+        });
+      }
+
+      const confirmationToken = createToken(
+        { email },
+        process.env.JWT_EMAIL_SECRET,
+        { expiresIn: 60 * 60 });
+
+      const updateUserConfirmationToken = await userModel.updateOne({ email, confirmationToken });
+
+      if(updateUserConfirmationToken) {
+        const url = `resend-token?email=${email}&token=${confirmationToken}`;
+
+        mailService.sendMail(
+          email,
+          url,
+          'Reset Password',
+          'Please click to reset your password');
+      }
+
+      return this.responseMessage({
+        message: 'Token was sent to email',
+        success: true,
+        statusCode: 200
+      });
+
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
+        success: false,
+        data: error
+      });
     }
 
-    if (user.isVerified) {
-      return ResponseMessage({
-        message: 'User have already verified',
-        statusCode: 201
-      })
-    }
-
-    const response = await cacheService.getToken(email)
-
-    if (!response === confirmationToken) {
-      return ResponseMessage({
-        message: 'Invalid or expired token',
-        statusCode: 401,
-        success: false
-      })
-    }
-
-    await userModel.updateOne({
-      email: email,
-      isVerified: true
-    })
-
-    return ResponseMessage({
-      success: true,
-      statusCode: 201,
-    })
-  };
-
-  async resendVerificationToken (req) {
-    const email = req.query.email
-
-    const confirmationToken = this.sendMail({
-       email,
-      subject: 'Email verification',
-      purpose: 'Please click to verify your email'
-    })
-
-    await userModel.updateOne({
-      email,
-      confirmationToken
-    })
-
-    return ResponseMessage({
-      message: 'Token was sent to email',
-      statusCode: 200
-    })
-  };
-
-  async requestResendPassword (req) {
-    const email = req.query.email
-
-    const user = await userModel.findOne({ email })
-
-    if (!user) {
-      return ResponseMessage({
-        statusCode: 401,
-        message: 'Incorrect email',
-        success: false
-      })
-    }
-
-    const confirmationToken = this.sendMail({
-      email,
-      subject: 'Resend Password',
-      purpose: 'Please click to resend password'
-    })
-
-    await userModel.updateOne({
-      email,
-      confirmationToken
-    })
-
-    return ResponseMessage({
-      statusCode: 200,
-      message: 'Token was send to email'
-    })
   }
 
-  async resendPassword (req) {
-    const { email, password } = req.body
+  async resetPassword(req) {
 
-    const user = await userModel.findOne({
-      email
-    })
+    try {
+      const { email, password } = req.body;
 
-    if (!user) {
-      return ResponseMessage({
-        message: 'User Not Found',
-        statusCode: 404,
-        success: false
-      })
+      // handle validation errors and return if there are
+      const validationError = this.handleErrors(req);
+      if(validationError.hasErrors) { return validationError.body; }
+
+      const user = await userModel.findOne({ email });
+
+      if(!user) {
+        return this.responseMessage({
+          statusCode: 404,
+          success: false,
+          message: 'User Not Found'
+        });
+      }
+
+      const resetUserPassword = userModel.updateOne({
+        email,
+        password
+      });
+
+      if(resetUserPassword) {
+        return this.responseMessage({
+          statusCode: 200,
+          message: 'Password reset successfully'
+        });
+      }
+
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
+        success: false,
+        data: {
+          error
+        }
+      });
     }
 
-    // check is some fields is invalid return response
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const filteredErrors = handleErrors(errors)
-
-      return ResponseMessage({
-        statusCode: 400,
-        validationError: filteredErrors
-      })
-    }
-
-    await userModel.updateOne({
-      email,
-      password
-    });
-
-    return ResponseMessage({
-      statusCode: 204, // todo: review status code
-      message: "Password reset successfully"
-    })
   }
-}
+};

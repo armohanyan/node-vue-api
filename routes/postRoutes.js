@@ -5,6 +5,6 @@ const { Router } = require('express');
 const router = Router();
 
 // router.get("/posts", requireAuth,  PostsController.getPosts);
-router.get("/posts", PostsController.getPosts);
+router.get("/posts", requireAuth, PostsController.getPosts);
 
-module.exports = router;     
+module.exports = router;
