@@ -3,12 +3,12 @@ const authService = new AuthService;
 
 class AuthenticationController {
 
-  static async signUp(req, res) {
+  async signUp(req, res) {
     const data = await authService.signUp(req);
     res.status(data.statusCode).json(data);
   }
 
-  static async signIn(req, res) {
+  async signIn(req, res) {
     const data = await authService.signIn(req);
     res.status(data.statusCode).json(data);
   }
@@ -21,6 +21,16 @@ class AuthenticationController {
   async resendVerificationToken(req, res) {
     const data = await authService.resendVerificationToken(req);
     res.status(data.statusCode).json(data);
+  }
+
+  async verifyEmailOnResetPassword(req, res) {
+    const data = await authService.verifyEmailOnResetPassword(req);
+    res.status(data.statusCode).json(data);
+  }
+
+  async resetPassword(req, res) {
+      const data = await authService.resetPassword(req);
+      res.status(data.statusCode).json(data);
   }
 
 }
