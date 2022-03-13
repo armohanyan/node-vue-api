@@ -116,15 +116,24 @@ module.exports = class AuthService extends BaseService {
 
       if(token && verifyToken(token, process.env.JWT_EMAIL_SECRET)) {
 
-        const user = await userModel.findOne({ email, confirmationToken: token }).exec();
+        const isValidUser = await userModel.findOne({ email }).exec();
 
-        if(!user) {
+        if(!isValidUser) {
           return this.responseMessage({
             message: 'User Not Found',
             statusCode: 404,
             success: false
           });
         }
+
+        if(isValidUser.isVerified) {
+          return this.responseMessage({
+            statusCode: 200,
+            message: 'User has already verified'
+          });
+        }
+
+        const user = await userModel.findOne({ email, confirmationToken: token }).exec();
 
         await userModel.updateOne({
           _id: user._id,
@@ -147,7 +156,8 @@ module.exports = class AuthService extends BaseService {
     } catch(error) {
       return this.responseMessage({
         statusCode: 500,
-        success: false
+        success: false,
+        data: error
       });
     }
   };
@@ -203,7 +213,6 @@ module.exports = class AuthService extends BaseService {
 
     try {
       const { email } = req.body;
-
       const user = await userModel.findOne({ email }).exec();
 
       if(!user) {
@@ -222,7 +231,7 @@ module.exports = class AuthService extends BaseService {
       const updateUserConfirmationToken = await userModel.updateOne({ email, confirmationToken });
 
       if(updateUserConfirmationToken) {
-        const url = `resend-token?email=${email}&token=${confirmationToken}`;
+        const url = `reset-password?email=${email}&token=${confirmationToken}`;
 
         mailService.sendMail(
           email,
