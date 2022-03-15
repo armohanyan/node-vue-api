@@ -11,8 +11,22 @@ module.exports = class AuthService extends BaseService {
     super();
   }
 
+  /**
+   * @param req: {
+   * email,
+   * password,
+   * firstName,
+   * lastName
+   * }
+   * @returns {Promise<{
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
+   * }>}
+   */
   async signUp(req) {
-
     try {
       const { email, password, firstName, lastName } = req.body;
 
@@ -28,10 +42,13 @@ module.exports = class AuthService extends BaseService {
         });
       }
 
-      const confirmationToken = createToken(
-        { email },
-        process.env.JWT_EMAIL_SECRET,
-        { expiresIn: 60 * 60 });
+      const confirmationToken = createToken({
+        payload: { email },
+        secret: process.env.JWT_EMAIL_SECRET,
+        options: {
+          expiresIn: '2m'
+        }
+      });
 
       const createUser = await userModel.create({
         confirmationToken,
@@ -44,14 +61,13 @@ module.exports = class AuthService extends BaseService {
       if(createUser) {
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
-        mailService.sendMail(
-          email,
-          url,
-          'Email verification',
-          'Please click to verify your email'
-        );
+        mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
-        const token = createToken({ id: createUser._id });
+        const token = createToken({
+          payload: {
+            id: createUser._id
+          }
+        });
 
         return this.responseMessage({
           statusCode: 201,
@@ -70,18 +86,36 @@ module.exports = class AuthService extends BaseService {
 
   };
 
+  /**
+   * @param req: {
+     * email
+     * password
+   * }
+   * @returns {Promise<{
+     * data: Object,
+     * success: Boolean,
+     * message: String,
+     * validationError: Object,
+     * statusCode: Number
+   * }>}
+   */
   async signIn(req) {
-
     try {
-      const { email, password } = req.body;
-
       const err = this.handleErrors(req);
       if(err.hasErrors) { return err.body; }
+
+      const { email, password } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
 
       if(user && bcrypt.compareSync(password, user.password)) {
-        const token = createToken({ id: user._id });
+
+        const token = createToken({
+          payload: {
+            id: user._id
+          }
+        });
+
         return this.responseMessage({
           data: {
             token,
@@ -99,6 +133,7 @@ module.exports = class AuthService extends BaseService {
         message: 'Incorrect email and/or password.',
         success: false
       });
+
     } catch(error) {
       return this.responseMessage({
         statusCode: 500,
@@ -109,12 +144,23 @@ module.exports = class AuthService extends BaseService {
 
   };
 
+  /**
+   * @param req: {
+   * email
+   * token
+   * }
+   * @returns {Promise<{
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
+   * }>}
+   */
   async verifyEmail(req) {
-
     try {
-      const { email, token } = req.query;
-
-      if(token && verifyToken(token, process.env.JWT_EMAIL_SECRET)) {
+      const { email, token } = req.body;
+      if(token && verifyToken({ token, secret: process.env.JWT_EMAIL_SECRET })) {
 
         const isValidUser = await userModel.findOne({ email }).exec();
 
@@ -144,7 +190,7 @@ module.exports = class AuthService extends BaseService {
         return this.responseMessage({
           success: true,
           statusCode: 200,
-          message: 'Email successfully confirmed.'
+          message: 'Email successfully confirmed'
         });
       } else {
         return this.responseMessage({
@@ -162,18 +208,30 @@ module.exports = class AuthService extends BaseService {
     }
   };
 
+  /**
+   * @param req: {
+     * email
+   * }
+   * @returns {Promise<{
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
+   * }>}
+   */
   async resendVerificationToken(req) {
-
     try {
-      const email = req.query.email;
+      const { email } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
 
       if(user) {
-        const confirmationToken = createToken(
-          { email },
-          process.env.JWT_EMAIL_SECRET,
-          { expiresIn: 60 * 60 });
+        const confirmationToken = createToken({
+          payload: { email },
+          secret: process.env.JWT_EMAIL_SECRET,
+          options: { expiresIn: '1m' }
+        });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
@@ -203,14 +261,26 @@ module.exports = class AuthService extends BaseService {
     } catch(error) {
       return this.responseMessage({
         statusCode: 500,
-        success: false
+        success: false,
+        data: error
       });
     }
 
   };
 
+  /**
+   * @param req: {
+      * email
+   * }
+   * @returns {Promise<{
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
+   * }>}
+  */
   async verifyEmailOnResetPassword(req) {
-
     try {
       const { email } = req.body;
       const user = await userModel.findOne({ email }).exec();
@@ -223,10 +293,11 @@ module.exports = class AuthService extends BaseService {
         });
       }
 
-      const confirmationToken = createToken(
-        { email },
-        process.env.JWT_EMAIL_SECRET,
-        { expiresIn: 60 * 60 });
+      const confirmationToken = createToken({
+        payload: { email },
+        secret: process.env.JWT_PASSOWRD_RESET_SECRET,
+        options: { expiresIn: "2m" }
+      });
 
       const updateUserConfirmationToken = await userModel.updateOne({ email, confirmationToken });
 
@@ -237,7 +308,8 @@ module.exports = class AuthService extends BaseService {
           email,
           url,
           'Reset Password',
-          'Please click to reset your password');
+          'Please click to reset your password'
+        );
       }
 
       return this.responseMessage({
@@ -256,34 +328,59 @@ module.exports = class AuthService extends BaseService {
 
   }
 
+  /**
+   * @param req: {
+     * password
+   * }
+   * @returns {Promise<{
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
+   * }>}
+   */
   async resetPassword(req) {
-
     try {
-      const { email, password } = req.body;
-
-      // handle validation errors and return if there are
       const validationError = this.handleErrors(req);
       if(validationError.hasErrors) { return validationError.body; }
 
-      const user = await userModel.findOne({ email });
+      const { password } = req.body;
 
-      if(!user) {
-        return this.responseMessage({
-          statusCode: 404,
-          success: false,
-          message: 'User Not Found'
-        });
-      }
-
-      const resetUserPassword = userModel.updateOne({
-        email,
-        password
+      const token = req?.headers?.authorization?.split(' ')[1] || null;
+      const isTokenValid = verifyToken({
+          token,
+          secret: process.env.JWT_PASSOWRD_RESET_SECRET
       });
 
-      if(resetUserPassword) {
+      if(isTokenValid) {
+        const { email } = isTokenValid;
+        const user = await userModel.findOne({ email });
+
+        if(!user) {
+          return this.responseMessage({
+            statusCode: 404,
+            success: false,
+            message: 'User Not Found'
+          });
+        }
+
+        const resetUserPassword = userModel.updateOne({
+          email,
+          password
+        });
+
+        if(resetUserPassword) {
+          return this.responseMessage({
+            statusCode: 200,
+            message: 'Password reset successfully'
+          });
+        }
+      } else {
         return this.responseMessage({
-          statusCode: 200,
-          message: 'Password reset successfully'
+          statusCode: 401,
+          success: false,
+          message: 'Invalid token'
         });
       }
 
@@ -296,6 +393,6 @@ module.exports = class AuthService extends BaseService {
         }
       });
     }
-
-  }
+  };
 };
+
