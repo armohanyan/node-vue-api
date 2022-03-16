@@ -88,15 +88,15 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
-     * email
-     * password
+   * email
+   * password
    * }
    * @returns {Promise<{
-     * data: Object,
-     * success: Boolean,
-     * message: String,
-     * validationError: Object,
-     * statusCode: Number
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
    * }>}
    */
   async signIn(req) {
@@ -110,22 +110,30 @@ module.exports = class AuthService extends BaseService {
 
       if(user && bcrypt.compareSync(password, user.password)) {
 
-        const token = createToken({
-          payload: {
-            id: user._id
-          }
-        });
-
-        return this.responseMessage({
-          data: {
-            token,
-            user: {
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email
+        if(user.isVerified) {
+          const token = createToken({
+            payload: {
+              id: user._id
             }
-          }
-        });
+          });
+
+          return this.responseMessage({
+            data: {
+              token,
+              user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+              }
+            }
+          });
+        } else {
+          return this.responseMessage({
+            statusCode: 401,
+            message: 'Email is not verified',
+            success: false
+          });
+        }
       }
 
       return this.responseMessage({
@@ -210,7 +218,7 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
-     * email
+   * email
    * }
    * @returns {Promise<{
    * data: Object,
@@ -230,7 +238,7 @@ module.exports = class AuthService extends BaseService {
         const confirmationToken = createToken({
           payload: { email },
           secret: process.env.JWT_EMAIL_SECRET,
-          options: { expiresIn: '1m' }
+          options: { expiresIn: '10m' }
         });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
@@ -270,7 +278,7 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
-      * email
+   * email
    * }
    * @returns {Promise<{
    * data: Object,
@@ -279,7 +287,7 @@ module.exports = class AuthService extends BaseService {
    * validationError: Object,
    * statusCode: Number
    * }>}
-  */
+   */
   async verifyEmailOnResetPassword(req) {
     try {
       const { email } = req.body;
@@ -296,7 +304,7 @@ module.exports = class AuthService extends BaseService {
       const confirmationToken = createToken({
         payload: { email },
         secret: process.env.JWT_PASSOWRD_RESET_SECRET,
-        options: { expiresIn: "2m" }
+        options: { expiresIn: '10m' }
       });
 
       const updateUserConfirmationToken = await userModel.updateOne({ email, confirmationToken });
@@ -330,7 +338,7 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
-     * password
+   * password
    * }
    * @returns {Promise<{
    * data: Object,
@@ -349,8 +357,8 @@ module.exports = class AuthService extends BaseService {
 
       const token = req?.headers?.authorization?.split(' ')[1] || null;
       const isTokenValid = verifyToken({
-          token,
-          secret: process.env.JWT_PASSOWRD_RESET_SECRET
+        token,
+        secret: process.env.JWT_PASSOWRD_RESET_SECRET
       });
 
       if(isTokenValid) {
@@ -365,9 +373,10 @@ module.exports = class AuthService extends BaseService {
           });
         }
 
-        const resetUserPassword = userModel.updateOne({
+        const resetUserPassword = await userModel.updateOne({
           email,
-          password
+          password,
+          confirmationToken: null
         });
 
         if(resetUserPassword) {
