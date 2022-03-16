@@ -131,7 +131,10 @@ module.exports = class AuthService extends BaseService {
           return this.responseMessage({
             statusCode: 401,
             message: 'Email is not verified',
-            success: false
+            success: false,
+            data: {
+              isVerified: false
+            }
           });
         }
       }
@@ -174,7 +177,7 @@ module.exports = class AuthService extends BaseService {
 
         if(!isValidUser) {
           return this.responseMessage({
-            message: 'User Not Found',
+            message: 'User does not found',
             statusCode: 404,
             success: false
           });
