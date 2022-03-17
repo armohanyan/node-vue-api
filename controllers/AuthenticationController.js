@@ -13,6 +13,11 @@ class AuthenticationController {
     res.status(data.statusCode).json(data);
   }
 
+  async requestVerifyEmail(req, res) {
+    const data = await authService.requestVerifyEmail(req);
+    res.status(data.statusCode).json(data);
+  }
+
   async verifyEmail(req, res) {
     const data = await authService.verifyEmail(req);
     res.status(data.statusCode).json(data);

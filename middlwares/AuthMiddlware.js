@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const requireAuth = (req, res, next) => {
-  const token = req?.cookies?.jwt || req?.headers?.authorization?.split(' ')[1] || null;
+  const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
 
   if(token) {
     try {
