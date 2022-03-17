@@ -157,6 +157,70 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
+      * email
+   * }
+   * @returns {Promise<{
+     * data: Object,
+     * success: Boolean,
+     * message: String,
+     * validationError: Object,
+     * statusCode: Number
+   * }>}
+   */
+  async requestVerifyEmail(req) {
+    try {
+      const { email } = req.body;
+
+      const user = await userModel.findOne({ email }).exec();;
+
+      if(!user) {
+        return this.responseMessage({
+          statusCode: 400,
+          success: false,
+          message: 'Invalid email'
+        });
+      }
+
+      const confirmationToken = createToken({
+        payload: { email },
+        secret: process.env.JWT_EMAIL_SECRET,
+        options: {
+          expiresIn: '2m'
+        }
+      });
+
+      await userModel.updateOne({
+        email,
+        confirmationToken
+      })
+
+      const url = `verify-email?email=${email}&token=${confirmationToken}`;
+
+      mailService.sendMail(
+        email,
+        url,
+        'Email verification',
+        'Please click to verify your email'
+      );
+
+      return this.responseMessage({
+        statusCode: 200,
+        message: "Token was sent to email"
+      })
+
+    } catch(error) {
+      return this.responseMessage({
+        statusCode: 500,
+        success: false,
+        data: {
+          error
+        }
+      })
+    }
+  }
+
+  /**
+   * @param req: {
    * email
    * token
    * }
@@ -241,7 +305,7 @@ module.exports = class AuthService extends BaseService {
         const confirmationToken = createToken({
           payload: { email },
           secret: process.env.JWT_EMAIL_SECRET,
-          options: { expiresIn: '10m' }
+          options: { expiresIn: '2m' }
         });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
@@ -266,7 +330,7 @@ module.exports = class AuthService extends BaseService {
         return this.responseMessage({
           statusCode: 404,
           success: false,
-          message: 'User Not Found'
+          message: 'User does not found'
         });
       }
     } catch(error) {
@@ -299,7 +363,7 @@ module.exports = class AuthService extends BaseService {
       if(!user) {
         return this.responseMessage({
           statusCode: 404,
-          message: 'User Not Found',
+          message: 'User does not found',
           success: false
         });
       }
@@ -372,7 +436,7 @@ module.exports = class AuthService extends BaseService {
           return this.responseMessage({
             statusCode: 404,
             success: false,
-            message: 'User Not Found'
+            message: 'User does not found'
           });
         }
 
