@@ -24,9 +24,17 @@ class AccountService extends BaseService {
 
     try {
       const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
+
+      if(!token) {
+        return this.responseMessage({
+          statusCode: 400,
+          success: false,
+          message: "Missing data"
+        })
+      }
       const isValidToken = verifyToken({ token });
 
-      if(token && isValidToken) {
+      if(isValidToken) {
         const userId = isValidToken.id;
 
         const user = await userModel.findOne({ _id: userId });
