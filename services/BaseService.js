@@ -31,6 +31,7 @@ module.exports = class BaseService {
       return {
         hasErrors: true,
         body: this.responseMessage({
+          success: false,
           statusCode: 400,
           validationError: filteredErrors,
         }),
@@ -39,6 +40,5 @@ module.exports = class BaseService {
     return {
       hasErrors: false,
     };
-
   }
 };
