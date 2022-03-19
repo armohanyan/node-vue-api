@@ -1,16 +1,20 @@
-const Post = require("../models/Post");
-    
+const postModel = require("../models/Post");
+const PostService = require("../services/PostService");
+
 class PostController {
 
-    // get posts
-    static async getPosts(req, res) {
-        let posts = await Post.find();  
+    constructor() {
+        this.postService = new PostService();
+    }
 
-        res.status(200).json({
-            success: true,
-            data: posts,
-            message: ""
-        });
+    async index(req, res) {
+        const data = await this.postService.index();
+        res.status(data.statusCode).json(data);
+    }
+
+    async create(req, res) {
+        const data = await this.postService.create(req);
+        res.status(data.statusCode).json(data);
     }
 }
 
