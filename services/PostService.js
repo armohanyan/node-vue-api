@@ -1,5 +1,4 @@
 const postModel = require('../models/Post');
-
 const BaseService = require('./BaseService');
 
 module.exports = class extends BaseService {
@@ -37,20 +36,32 @@ module.exports = class extends BaseService {
 
   }
 
-  async create(req) {
+  async create(req, res) {
 
     try {
 
       const errors = this.handleErrors(req);
-      if(errors.hasErrors) return errors.body;
+      if(errors.hasErrors) { return errors.body; }
 
       const { title, body } = req.body;
 
-      await postModel.create({
+      const post = await postModel.create({
         title,
-        body
-      })
+        body,
+        image: req.file ? req.file.filename : null
+      });
 
+      return this.responseMessage({
+        statusCode: 201,
+        data: {
+            post: {
+              title: post.title,
+              body: post.body,
+              image: post.image,
+              created: post.createdAt
+            }
+        }
+      })
 
     } catch(error) {
       return this.responseMessage({
@@ -59,7 +70,5 @@ module.exports = class extends BaseService {
         data: error
       })
     }
-
-
   }
 };

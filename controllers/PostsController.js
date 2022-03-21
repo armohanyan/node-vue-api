@@ -13,7 +13,7 @@ class PostController {
     }
 
     async create(req, res) {
-        const data = await this.postService.create(req);
+        const data = await this.postService.create(req, res);
         res.status(data.statusCode).json(data);
     }
 }
