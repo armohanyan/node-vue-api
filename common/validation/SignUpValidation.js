@@ -26,6 +26,8 @@ module.exports = [
     .not()
     .isEmpty()
     .withMessage(validationMessage.required)
-    .matches(/^(?=(.*?[A-Z]){3,})(?=(.*[a-z]){3,})(?=(.*[\d]){3,})(?=(.*[\W]){3,})(?!.*\s).{8,}$/)
-    .withMessage("Min 3 uppercase letter, min 3 lowercase letter, min 3 special character, min 3 number")
+    .matches(/^(?=(.*?[A-Z]){3,}).{3,}$/).withMessage("Min 3 uppercase letter")
+    .matches(/^(?=(.*[a-z]){3,}).{3,}$/).withMessage("Min 3 lowercase letter")
+    .matches(/^(?=(.*[\d]){2,}).{2,}$/).withMessage("Min 2 numbers")
+    .matches(/^(?=(.*[\W]){2,}).{2,}$/).withMessage("Min 2 special character")
 ];

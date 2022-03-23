@@ -39,6 +39,7 @@ module.exports = class AuthService extends BaseService {
       if(user) {
         return this.responseMessage({
           message: 'User already registered',
+          success: false,
           statusCode: 409
         });
       }
@@ -81,6 +82,7 @@ module.exports = class AuthService extends BaseService {
     } catch(err) {
       return this.responseMessage({
         statusCode: 500,
+        success: false,
         message: 'Try again'
       });
     }
