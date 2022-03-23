@@ -7,6 +7,7 @@ const BaseService = require('./BaseService');
 const { createToken, verifyToken } = require('../common/token');
 
 module.exports = class AuthService extends BaseService {
+
   constructor() {
     super();
   }
