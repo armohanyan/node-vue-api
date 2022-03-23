@@ -1,5 +1,5 @@
 const multer = require('multer');
-const fs = require("fs");
+const fs = require('fs');
 const path = require('path');
 
 const imageFilter = (req, file, cb) => {
@@ -14,7 +14,9 @@ const imageFilter = (req, file, cb) => {
 const storage = multer.diskStorage({
 
   destination: (req, file, cb) => {
-    cb(null, './public/' + 'images' + '/');
+    const path = `./public/images/`;
+    fs.mkdirSync(path, { recursive: true });
+    cb(null, path);
   },
 
   filename: (req, file, cb) => {

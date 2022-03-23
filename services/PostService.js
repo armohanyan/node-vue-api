@@ -10,7 +10,7 @@ module.exports = class extends BaseService {
   async index() {
 
     try {
-      const posts = await postModel.find().skip(0).limit(5); // todo: make pagination
+      const posts = await postModel.find().sort( { createdAt: -1 } );
 
       let filteredPosts = posts.map(post => {
         return {
@@ -36,8 +36,7 @@ module.exports = class extends BaseService {
 
   }
 
-  async create(req, res) {
-
+  async create(req) {
     try {
 
       const errors = this.handleErrors(req);
