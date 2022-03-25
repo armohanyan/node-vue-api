@@ -5,9 +5,13 @@ const bcrypt = require('bcrypt');
 const mailService = new MailService();
 const BaseService = require('./BaseService');
 const { createToken, verifyToken } = require('../common/token');
+const { ResponseBuilder } = require('./ResponseBuilder');
 
 module.exports = class AuthService extends BaseService {
+  resBuilder = new ResponseBuilder();
+
   constructor() {
+
     super();
   }
 
@@ -36,11 +40,11 @@ module.exports = class AuthService extends BaseService {
       const user = await userModel.findOne({ email }).exec();
 
       if(user) {
-        return this.responseMessage({
-          message: 'User already registered',
-          success: false,
-          statusCode: 409
-        });
+        return this.resBuilder
+                   .setMessage('User already registered')
+                   .setSuccess(false)
+                   .setStatus(409)
+                   .generateResponse();
       }
 
       const confirmationToken = createToken({
@@ -159,21 +163,22 @@ module.exports = class AuthService extends BaseService {
 
   /**
    * @param req: {
-      * email
+   * email
    * }
    * @returns {Promise<{
-     * data: Object,
-     * success: Boolean,
-     * message: String,
-     * validationError: Object,
-     * statusCode: Number
+   * data: Object,
+   * success: Boolean,
+   * message: String,
+   * validationError: Object,
+   * statusCode: Number
    * }>}
    */
   async requestVerifyEmail(req) {
     try {
       const { email } = req.body;
 
-      const user = await userModel.findOne({ email }).exec();;
+      const user = await userModel.findOne({ email }).exec();
+      ;
 
       if(!user) {
         return this.responseMessage({
@@ -194,7 +199,7 @@ module.exports = class AuthService extends BaseService {
       await userModel.updateOne({
         email,
         confirmationToken
-      })
+      });
 
       const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
@@ -207,8 +212,8 @@ module.exports = class AuthService extends BaseService {
 
       return this.responseMessage({
         statusCode: 200,
-        message: "Token was sent to email"
-      })
+        message: 'Token was sent to email'
+      });
 
     } catch(error) {
       return this.responseMessage({
@@ -217,7 +222,7 @@ module.exports = class AuthService extends BaseService {
         data: {
           error
         }
-      })
+      });
     }
   }
 
