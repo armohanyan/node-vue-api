@@ -25,10 +25,12 @@ const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use(express.static("public"));
 app.use(cors({
   credentials: true,
   origin: ['http://localhost:8080'],
 }));
+// app.use(fileUpload());
 
 // use routes
 app.use('/api/auth', authRoutes);

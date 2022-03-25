@@ -11,7 +11,6 @@ module.exports = class AuthService extends BaseService {
   resBuilder = new ResponseBuilder();
 
   constructor() {
-
     super();
   }
 
