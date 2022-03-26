@@ -1,37 +1,38 @@
 const postModel = require('../models/Post');
 const BaseService = require('./BaseService');
+const { ResponseBuilder }  = require('./ResponseBuilder');
 
 module.exports = class extends BaseService {
 
   constructor() {
     super();
+    this.responseBuilder = new ResponseBuilder();
   }
 
   async index() {
-
     try {
-      const posts = await postModel.find().sort( { createdAt: -1 } );
+      const posts = await postModel.find().sort({ createdAt: -1 });
 
       let filteredPosts = posts.map(post => {
         return {
           title: post.title,
           body: post.body,
-          created: post.createdAt,
-        }
-      })
-
-      return this.responseMessage({
-        statusCode: 200,
-        data: {
-          posts : filteredPosts
-        }
+          created: post.createdAt
+        };
       });
+
+      return this.responseBuilder
+                 .setData({
+                   posts: filteredPosts
+                 })
+                 .generateResponse();
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        data: error
-      });
+      this.responseBuilder
+          .setSuccess(false)
+          .setStatus(500)
+          .setData(error)
+          .generateResponse();
     }
 
   }
@@ -50,24 +51,24 @@ module.exports = class extends BaseService {
         image: req.file ? req.file.filename : null
       });
 
-      return this.responseMessage({
-        statusCode: 201,
-        data: {
-            post: {
-              title: post.title,
-              body: post.body,
-              image: post.image,
-              created: post.createdAt
-            }
-        }
-      })
+      return this.responseBuilder
+                 .setStatus(201)
+                 .setData({
+                   post: {
+                     title: post.title,
+                     body: post.body,
+                     image: post.image,
+                     created: post.createdAt
+                   }
+                 })
+                 .generateResponse();
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: error
-      })
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(500)
+                 .setData(error)
+                 .generateResponse();
     }
-  }
+  };
 };

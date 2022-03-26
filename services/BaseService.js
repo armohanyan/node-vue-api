@@ -1,23 +1,8 @@
 const { validationResult } = require('express-validator');
 
 module.exports = class BaseService {
-  constructor() {}
 
-  responseMessage({
-    statusCode = 200,
-    success = true,
-    data = {},
-    message = '',
-    validationError = {},
-  }) {
-    return {
-      statusCode,
-      success,
-      data,
-      message,
-      validationError,
-    };
-  }
+  constructor() {  }
 
   handleErrors(request) {
     const { errors } = validationResult(request);
