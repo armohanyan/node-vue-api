@@ -101,7 +101,7 @@ dist
 # public
 
 .public/
-./public/images/
+./public/images
 
 # vuepress build output
 .vuepress/dist

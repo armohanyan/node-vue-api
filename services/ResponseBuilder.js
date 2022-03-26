@@ -1,19 +1,19 @@
 exports.ResponseBuilder = class ResponseBuilder {
   #statusCode = 200;
-  #success = true;
+  #status = true;
   #data = {};
   #message = '';
   #validationError = {};
 
   constructor() {}
 
-  setStatus(status) {
-    this.#statusCode = status;
+  setStatus(statusCode) {
+    this.#statusCode = statusCode;
     return this;
   }
 
-  setSuccess(success) {
-    this.#success = success;
+  setSuccess(status) {
+    this.#status = status;
     return this;
   }
 
@@ -27,18 +27,19 @@ exports.ResponseBuilder = class ResponseBuilder {
     return this;
   }
 
-  setValidationError(error) {
-    this.#validationError = error;
+  setValidationError(validationError) {
+    this.#validationError = validationError;
     return this;
   }
 
   generateResponse() {
     return {
       statusCode: this.#statusCode,
-      success: this.#success,
+      status: this.#status,
       data: this.#data,
       message: this.#message,
       validationError: this.#validationError
     };
   }
+
 };

@@ -5,13 +5,13 @@ const bcrypt = require('bcrypt');
 const mailService = new MailService();
 const BaseService = require('./BaseService');
 const { createToken, verifyToken } = require('../common/token');
-const { ResponseBuilder } = require('./ResponseBuilder');
+const { ResponseBuilder }  = require('./ResponseBuilder');
 
 module.exports = class AuthService extends BaseService {
-  resBuilder = new ResponseBuilder();
 
   constructor() {
     super();
+    this.responseBuilder = new ResponseBuilder();
   }
 
   /**
@@ -21,13 +21,7 @@ module.exports = class AuthService extends BaseService {
    * firstName,
    * lastName
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async signUp(req) {
     try {
@@ -39,7 +33,7 @@ module.exports = class AuthService extends BaseService {
       const user = await userModel.findOne({ email }).exec();
 
       if(user) {
-        return this.resBuilder
+        return this.responseBuilder
                    .setMessage('User already registered')
                    .setSuccess(false)
                    .setStatus(409)
@@ -47,19 +41,13 @@ module.exports = class AuthService extends BaseService {
       }
 
       const confirmationToken = createToken({
-        payload: { email },
-        secret: process.env.JWT_EMAIL_SECRET,
-        options: {
+        payload: { email }, secret: process.env.JWT_EMAIL_SECRET, options: {
           expiresIn: '2m'
         }
       });
 
       const createUser = await userModel.create({
-        confirmationToken,
-        firstName,
-        lastName,
-        password,
-        email
+        confirmationToken, firstName, lastName, password, email
       });
 
       if(createUser) {
@@ -73,20 +61,18 @@ module.exports = class AuthService extends BaseService {
           }
         });
 
-        return this.responseMessage({
-          statusCode: 201,
-          data: {
-            token
-          },
-          message: 'User registered.'
-        });
+        return this.responseBuilder
+                   .setMessage('User registered')
+                   .setStatus(201)
+                   .setData({ token })
+                   .generateResponse();
+
       }
     } catch(err) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        message: 'Try again'
-      });
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(500)
+                 .generateResponse();
     }
 
   };
@@ -96,13 +82,7 @@ module.exports = class AuthService extends BaseService {
    * email
    * password
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async signIn(req) {
     try {
@@ -122,40 +102,37 @@ module.exports = class AuthService extends BaseService {
             }
           });
 
-          return this.responseMessage({
-            data: {
-              token,
-              user: {
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email
-              }
-            }
-          });
+          return this.responseBuilder
+                     .setData({
+                       token,
+                       user: {
+                         firstName: user.firstName, lastName: user.lastName, email: user.email
+                       }
+                     })
+                     .generateResponse();
+
         } else {
-          return this.responseMessage({
-            statusCode: 401,
-            message: 'Email is not verified',
-            success: false,
-            data: {
-              isVerified: false
-            }
-          });
+          return this.responseBuilder
+                     .setData({ isVerified: false })
+                     .setStatus(401)
+                     .setMessage('Email is not verified')
+                     .setSuccess(false)
+                     .generateResponse();
         }
       }
 
-      return this.responseMessage({
-        statusCode: 401,
-        message: 'Incorrect email and/or password.',
-        success: false
-      });
+      return this.responseBuilder
+                 .setStatus(401)
+                 .setMessage('Incorrect email and/or  password')
+                 .setSuccess(false)
+                 .generateResponse();
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        data: error,
-        success: false
-      });
+      return this.responseBuilder
+                 .setData(error)
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
     }
 
   };
@@ -164,79 +141,56 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async requestVerifyEmail(req) {
     try {
       const { email } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
-      ;
 
       if(!user) {
-        return this.responseMessage({
-          statusCode: 400,
-          success: false,
-          message: 'Invalid email'
-        });
+        return this.responseBuilder
+                   .setStatus(400)
+                   .setMessage('Invalid Email')
+                   .setSuccess(false)
+                   .generateResponse();
       }
 
       const confirmationToken = createToken({
         payload: { email },
-        secret: process.env.JWT_EMAIL_SECRET,
-        options: {
+        secret: process.env.JWT_EMAIL_SECRET, options: {
           expiresIn: '2m'
         }
       });
 
       await userModel.updateOne({
-        email,
-        confirmationToken
+        email, confirmationToken
       });
 
       const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
-      mailService.sendMail(
-        email,
-        url,
-        'Email verification',
-        'Please click to verify your email'
-      );
+      mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
-      return this.responseMessage({
-        statusCode: 200,
-        message: 'Token was sent to email'
-      });
+      return this.responseBuilder
+                 .setMessage('Token was sent to email')
+                 .generateResponse();
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: {
-          error
-        }
-      });
+      return this.responseBuilder
+                 .setData(error)
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
     }
-  }
+  };
 
   /**
    * @param req: {
    * email
    * token
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async verifyEmail(req) {
     try {
@@ -246,46 +200,42 @@ module.exports = class AuthService extends BaseService {
         const isValidUser = await userModel.findOne({ email }).exec();
 
         if(!isValidUser) {
-          return this.responseMessage({
-            message: 'User does not found',
-            statusCode: 404,
-            success: false
-          });
+          return this.responseBuilder
+                     .setStatus(404)
+                     .setMessage('User does not found')
+                     .setSuccess(false)
+                     .generateResponse();
         }
 
         if(isValidUser.isVerified) {
-          return this.responseMessage({
-            statusCode: 200,
-            message: 'User has already verified'
-          });
+          return this.responseBuilder
+                     .setMessage('User has already verified')
+                     .generateResponse();
         }
 
         const user = await userModel.findOne({ email, confirmationToken: token }).exec();
 
         await userModel.updateOne({
-          _id: user._id,
-          isVerified: true,
-          confirmationToken: null
+          _id: user._id, isVerified: true, confirmationToken: null
         });
 
-        return this.responseMessage({
-          success: true,
-          statusCode: 200,
-          message: 'Email successfully confirmed'
-        });
+        return this.responseBuilder
+                   .setMessage('Email successfully confirmed')
+                   .generateResponse();
+
       } else {
-        return this.responseMessage({
-          success: false,
-          message: 'Invalid or expire token',
-          statusCode: 401
-        });
+        return this.responseBuilder
+                   .setStatus(401)
+                   .setMessage('Invalid or expire token')
+                   .setSuccess(false)
+                   .generateResponse();
       }
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: error
-      });
+      return this.responseBuilder
+                 .setData(error)
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
     }
   };
 
@@ -293,13 +243,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async resendVerificationToken(req) {
     try {
@@ -309,42 +253,35 @@ module.exports = class AuthService extends BaseService {
 
       if(user) {
         const confirmationToken = createToken({
-          payload: { email },
-          secret: process.env.JWT_EMAIL_SECRET,
-          options: { expiresIn: '2m' }
+          payload: { email }, secret: process.env.JWT_EMAIL_SECRET, options: { expiresIn: '2m' }
         });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
         await userModel.updateOne({
-          email,
-          confirmationToken
+          email, confirmationToken
         });
 
-        mailService.sendMail(
-          email,
-          url,
-          'Email verification',
-          'Please click to verify your email'
-        );
+        mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
-        return this.responseMessage({
-          message: 'Token was sent to email',
-          statusCode: 200
-        });
+        return this.responseBuilder
+                   .setMessage('Token was sent to email')
+                   .generateResponse();
+
       } else {
-        return this.responseMessage({
-          statusCode: 404,
-          success: false,
-          message: 'User does not found'
-        });
+        return this.responseBuilder
+                   .setStatus(404)
+                   .setMessage('User does not found')
+                   .setSuccess(false)
+                   .generateResponse();
       }
+
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: error
-      });
+      return this.responseBuilder
+                 .setData(error)
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
     }
 
   };
@@ -353,13 +290,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async verifyEmailOnResetPassword(req) {
     try {
@@ -367,11 +298,11 @@ module.exports = class AuthService extends BaseService {
       const user = await userModel.findOne({ email }).exec();
 
       if(!user) {
-        return this.responseMessage({
-          statusCode: 404,
-          message: 'User does not found',
-          success: false
-        });
+        return this.responseBuilder
+                   .setStatus(404)
+                   .setMessage('User does not found')
+                   .setSuccess(false)
+                   .generateResponse();
       }
 
       const confirmationToken = createToken({
@@ -385,26 +316,19 @@ module.exports = class AuthService extends BaseService {
       if(updateUserConfirmationToken) {
         const url = `reset-password?email=${email}&token=${confirmationToken}`;
 
-        mailService.sendMail(
-          email,
-          url,
-          'Reset Password',
-          'Please click to reset your password'
-        );
+        mailService.sendMail(email, url, 'Reset Password', 'Please click to reset your password');
       }
 
-      return this.responseMessage({
-        message: 'Token was sent to email',
-        success: true,
-        statusCode: 200
-      });
+      return this.responseBuilder
+                 .setMessage('Token was sent to email')
+                 .generateResponse();
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: error
-      });
+      return this.responseBuilder
+                 .setData(error)
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
     }
 
   }
@@ -413,13 +337,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * password
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async resetPassword(req) {
     try {
@@ -430,8 +348,7 @@ module.exports = class AuthService extends BaseService {
 
       const token = req?.headers?.authorization?.split(' ')[1] || null;
       const isTokenValid = verifyToken({
-        token,
-        secret: process.env.JWT_PASSOWRD_RESET_SECRET
+        token, secret: process.env.JWT_PASSOWRD_RESET_SECRET
       });
 
       if(isTokenValid) {
@@ -439,41 +356,38 @@ module.exports = class AuthService extends BaseService {
         const user = await userModel.findOne({ email });
 
         if(!user) {
-          return this.responseMessage({
-            statusCode: 404,
-            success: false,
-            message: 'User does not found'
-          });
+          return this.responseBuilder
+                     .setStatus(404)
+                     .setMessage('User does not found')
+                     .setSuccess(false)
+                     .generateResponse();
         }
 
         const resetUserPassword = await userModel.updateOne({
-          email,
-          password,
-          confirmationToken: null
+          email, password, confirmationToken: null
         });
 
         if(resetUserPassword) {
-          return this.responseMessage({
-            statusCode: 200,
-            message: 'Password reset successfully'
-          });
+          return this.responseBuilder
+                     .setMessage('Password reset successfully')
+                     .generateResponse();
+
         }
       } else {
-        return this.responseMessage({
-          statusCode: 401,
-          success: false,
-          message: 'Invalid token'
-        });
+        return this.responseBuilder
+                   .setStatus(401)
+                   .setMessage('Invalid token')
+                   .setSuccess(false)
+                   .generateResponse();
+
       }
 
     } catch(error) {
-      return this.responseMessage({
-        statusCode: 500,
-        success: false,
-        data: {
-          error
-        }
-      });
+      return this.responseBuilder
+                 .setStatus(500)
+                 .setSuccess(false)
+                 .generateResponse();
+
     }
   };
 };
