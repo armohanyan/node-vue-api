@@ -21,13 +21,7 @@ module.exports = class AuthService extends BaseService {
    * firstName,
    * lastName
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async signUp(req) {
     try {
@@ -88,13 +82,7 @@ module.exports = class AuthService extends BaseService {
    * email
    * password
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async signIn(req) {
     try {
@@ -153,13 +141,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async requestVerifyEmail(req) {
     try {
@@ -191,7 +173,6 @@ module.exports = class AuthService extends BaseService {
       mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
       return this.responseBuilder
-                 .setStatus(200)
                  .setMessage('Token was sent to email')
                  .generateResponse();
 
@@ -209,13 +190,7 @@ module.exports = class AuthService extends BaseService {
    * email
    * token
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async verifyEmail(req) {
     try {
@@ -234,7 +209,6 @@ module.exports = class AuthService extends BaseService {
 
         if(isValidUser.isVerified) {
           return this.responseBuilder
-                     .setStatus(200)
                      .setMessage('User has already verified')
                      .generateResponse();
         }
@@ -269,13 +243,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async resendVerificationToken(req) {
     try {
@@ -322,13 +290,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * email
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async verifyEmailOnResetPassword(req) {
     try {
@@ -375,13 +337,7 @@ module.exports = class AuthService extends BaseService {
    * @param req: {
    * password
    * }
-   * @returns {Promise<{
-   * data: Object,
-   * success: Boolean,
-   * message: String,
-   * validationError: Object,
-   * statusCode: Number
-   * }>}
+   * @returns {Promise<{ ResponseBuilder }>}
    */
   async resetPassword(req) {
     try {
