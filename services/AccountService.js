@@ -10,12 +10,6 @@ class AccountService extends BaseService {
     this.responseBuilder = new ResponseBuilder();
   }
 
-  /**
-   * @param req: {
-   * cookies.accessToken || headers.authorization
-   * }
-   * @returns {Promise<exports.ResponseBuilder>}
-   */
   async current(req) {
 
     try {
