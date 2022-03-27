@@ -1,4 +1,3 @@
-const postModel = require("../models/Post");
 const PostService = require("../services/PostService");
 
 class PostController {
@@ -14,6 +13,16 @@ class PostController {
 
     async create(req, res) {
         const data = await this.postService.create(req);
+        res.status(data.statusCode).json(data);
+    }
+
+    async show(req, res) {
+        const data = await this.postService.show(req);
+        res.status(data.statusCode).json(data);
+    }
+
+    async delete(req, res) {
+        const data = await this.postService.delete(req);
         res.status(data.statusCode).json(data);
     }
 }

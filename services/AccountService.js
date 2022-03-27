@@ -1,13 +1,11 @@
 const BaseService = require('./BaseService');
 const userModel = require('../models/User');
 const { verifyToken } = require('../common/token');
-const { ResponseBuilder }  = require('./ResponseBuilder');
 
 class AccountService extends BaseService {
 
   constructor() {
     super();
-    this.responseBuilder = new ResponseBuilder();
   }
 
   async current(req) {

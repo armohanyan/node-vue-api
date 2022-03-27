@@ -1,17 +1,14 @@
 const userModel = require('../models/User');
-
 const MailService = require('./mailService');
 const bcrypt = require('bcrypt');
 const mailService = new MailService();
 const BaseService = require('./BaseService');
 const { createToken, verifyToken } = require('../common/token');
-const { ResponseBuilder }  = require('./ResponseBuilder');
 
 module.exports = class AuthService extends BaseService {
 
   constructor() {
     super();
-    this.responseBuilder = new ResponseBuilder();
   }
 
   /**
