@@ -7,7 +7,6 @@ module.exports = class extends BaseService {
 
   constructor() {
     super();
-    this.responseBuilder = new ResponseBuilder();
   }
 
   async index(req) {
@@ -20,7 +19,7 @@ module.exports = class extends BaseService {
 
       let filteredPosts = posts.map(post => {
         return {
-          id: post.id,
+          id: post._id,
           title: post.title,
           body: post.body,
           created: post.createdAt
@@ -75,10 +74,76 @@ module.exports = class extends BaseService {
     }
   };
 
+  async show(req) {
+    try {
+      const { id } = req.query;
+
+      if(id) {
+        const post = await postModel.findOne({ _id: id });
+
+        if(!post) {
+          return this.responseBuilder
+                     .setSuccess(false)
+                     .setMessage('Post not found')
+                     .setStatus(404)
+                     .generateResponse();
+        }
+
+        return this.responseBuilder
+                   .setData({
+                     id: post.id,
+                     title: post.title,
+                     body: post.body,
+                     created: post.createdAt
+                   })
+                   .generateResponse();
+      }
+
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(400)
+                 .setMessage('Invalid post id')
+                 .generateResponse();
+
+    } catch(error) {
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(500)
+                 .setData(error)
+                 .generateResponse();
+    }
+  };
+
+  async delete(req) {
+    try {
+      const { id } = req.body;
+
+      if(id) {
+        await postModel.deleteOne({ _id: id }).exec();
+
+        return this.responseBuilder
+                   .generateResponse();
+      }
+
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(400)
+                 .setMessage('Invalid post id')
+                 .generateResponse();
+
+    } catch(error) {
+      return this.responseBuilder
+                 .setStatus(500)
+                 .setData(error)
+                 .setSuccess(false)
+                 .generateResponse();
+    }
+  }
+
   async update(req) {
     try {
       const { title, body } = req.body;
-      const { id   } = req.query;
+      const { id } = req.query;
 
       if(!id) {
         return this.responseBuilder
@@ -92,8 +157,8 @@ module.exports = class extends BaseService {
       const post = await postModel.findOne({ id });
 
       if(post && post.image) {
-          fs.unlinkSync('public/images/' + post.image);
-       }
+        fs.unlinkSync('public/images/' + post.image);
+      }
 
       await postModel.findOneAndUpdate(
         { id },
