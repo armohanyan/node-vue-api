@@ -11,6 +11,7 @@ const postController = new PostsController();
 const router = Router();
 
 router.get("/", requireAuth,  postController.index.bind(postController));
-router.post("/", requireAuth, upload.single("file"),  CreatePostValidation, postController.create.bind(postController));
+router.post("/", requireAuth, upload.single("file"), CreatePostValidation, postController.create.bind(postController));
+router.put("/", requireAuth, upload.single("file"), postController.update.bind(postController));
 
 module.exports = router;
