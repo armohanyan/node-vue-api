@@ -12,11 +12,11 @@ module.exports = class extends BaseService {
 
   async index(req) {
     try {
-      const { orderBy, value } = req.query;
+      const { orderBy } = req.query;
 
-      const posts = orderBy
-        ? await postModel.find({}).sort([[orderBy, value]]).exec()
-        : await postModel.find().sort({ createdAt: -1 });
+      const [field, sort] = (orderBy || 'createdAt:-1').split(':');
+
+      const posts = await postModel.find({}).sort([[field, sort]]).exec();
 
       let filteredPosts = posts.map(post => {
         return {
@@ -45,7 +45,6 @@ module.exports = class extends BaseService {
 
   async create(req) {
     try {
-
       const errors = this.handleErrors(req);
       if(errors.hasErrors) { return errors.body; }
 

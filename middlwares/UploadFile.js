@@ -11,9 +11,8 @@ const imageFilter = (req, file, cb) => {
 };
 
 const storage = multer.diskStorage({
-
   destination: (req, file, cb) => {
-    const path = `./public/images/`;
+    const path = `public/images/`;
     fs.mkdirSync(path, { recursive: true });
     cb(null, path);
   },
@@ -21,7 +20,6 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   }
-
 });
 
 const uploadFile = multer({
