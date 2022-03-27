@@ -7,7 +7,7 @@ class PostController {
     }
 
     async index(req, res) {
-        const data = await this.postService.index();
+        const data = await this.postService.index(req);
         res.status(data.statusCode).json(data);
     }
 
