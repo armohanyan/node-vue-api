@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const imageFilter = (req, file, cb) => {
-
   if(file.mimetype.startsWith('image')) {
     cb(null, true);
   } else {
@@ -12,9 +11,8 @@ const imageFilter = (req, file, cb) => {
 };
 
 const storage = multer.diskStorage({
-
   destination: (req, file, cb) => {
-    const path = `./public/images/`;
+    const path = `public/images/`;
     fs.mkdirSync(path, { recursive: true });
     cb(null, path);
   },
@@ -22,7 +20,6 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   }
-
 });
 
 const uploadFile = multer({

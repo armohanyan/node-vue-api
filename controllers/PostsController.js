@@ -7,7 +7,7 @@ class PostController {
     }
 
     async index(req, res) {
-        const data = await this.postService.index();
+        const data = await this.postService.index(req);
         res.status(data.statusCode).json(data);
     }
 
@@ -23,6 +23,11 @@ class PostController {
 
     async delete(req, res) {
         const data = await this.postService.delete(req);
+        res.status(data.statusCode).json(data);
+    }
+
+    async update(req, res) {
+        const data = await this.postService.update(req);
         res.status(data.statusCode).json(data);
     }
 }
