@@ -1,6 +1,6 @@
 const postModel = require('../models/Post');
 const BaseService = require('./BaseService');
-const { ResponseBuilder }  = require('./ResponseBuilder');
+const { ResponseBuilder } = require('./ResponseBuilder');
 
 module.exports = class extends BaseService {
 
@@ -9,9 +9,13 @@ module.exports = class extends BaseService {
     this.responseBuilder = new ResponseBuilder();
   }
 
-  async index() {
+  async index(req) {
     try {
-      const posts = await postModel.find().sort({ createdAt: -1 });
+      const { orderBy, value } = req.query;
+
+      const posts = orderBy
+        ? await postModel.find({}).sort([[orderBy, value]]).exec()
+        : await postModel.find().sort({ createdAt: -1 });
 
       let filteredPosts = posts.map(post => {
         return {
@@ -28,11 +32,11 @@ module.exports = class extends BaseService {
                  .generateResponse();
 
     } catch(error) {
-      this.responseBuilder
-          .setSuccess(false)
-          .setStatus(500)
-          .setData(error)
-          .generateResponse();
+      return this.responseBuilder
+                 .setSuccess(false)
+                 .setStatus(500)
+                 .setData(error)
+                 .generateResponse();
     }
 
   }
@@ -62,7 +66,6 @@ module.exports = class extends BaseService {
                    }
                  })
                  .generateResponse();
-
     } catch(error) {
       return this.responseBuilder
                  .setSuccess(false)
