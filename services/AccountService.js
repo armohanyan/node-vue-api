@@ -40,7 +40,8 @@ class AccountService extends BaseService {
                        firstName: user.firstName,
                        lastName: user.lastName,
                        email: user.email,
-                       isVerified: user.isVerified
+                       isVerified: user.isVerified,
+                       role: user.isVerified
                      }
                    });
       }

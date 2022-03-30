@@ -44,7 +44,7 @@ module.exports = class AuthService extends BaseService {
       });
 
       const createUser = await userModel.create({
-        confirmationToken, firstName, lastName, password, email
+        confirmationToken, firstName, lastName, password, email, role: "basic"
       });
 
       if(createUser) {
@@ -103,7 +103,11 @@ module.exports = class AuthService extends BaseService {
                      .setData({
                        token,
                        user: {
-                         firstName: user.firstName, lastName: user.lastName, email: user.email
+                         firstName: user.firstName,
+                         lastName: user.lastName,
+                         email: user.email,
+                         isVerified: user.isVerified,
+                         role: user.role
                        }
                      })
                      .generateResponse();
