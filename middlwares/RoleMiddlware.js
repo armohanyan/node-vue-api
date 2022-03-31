@@ -1,13 +1,13 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/User');
 
-const roles = {
+const rolesObj = {
   ADMIN: 'admin',
-  BASIC: "basic",
-  SUPERADMIN: 'superAdmin'
+  BASIC: 'basic',
+  SUPER_ADMIN: 'superAdmin'
 };
 
-const roleAuth = (role = 'basic') => {
+const roleAuth = (...roles) => {
   return (req, res, next) => {
 
     const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
@@ -22,11 +22,11 @@ const roleAuth = (role = 'basic') => {
             return res.status(500).send('Server error');
           }
 
-          if(user.role === roles.SUPERADMIN) {
-            return next()
+          if(user.role === rolesObj.SUPER_ADMIN) {
+            return next();
           }
 
-          if(user.role !== role) {
+          if(!roles.includes(user.role)) {
             return res.status(401).send('Unauthorized');
           }
 

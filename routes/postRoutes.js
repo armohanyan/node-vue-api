@@ -12,7 +12,7 @@ const router = Router();
 
 router.get("/", requireAuth,  postController.index.bind(postController));
 router.delete("/", roleAuth("admin"),  postController.delete.bind(postController));
-router.post("/", roleAuth("basic"), upload.single("file"), CreatePostValidation, postController.create.bind(postController));
+router.post("/", roleAuth("basic", "admin"), upload.single("file"), CreatePostValidation, postController.create.bind(postController));
 router.get("/show/", requireAuth,  postController.show.bind(postController));
 
 module.exports = router;
