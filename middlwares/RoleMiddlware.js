@@ -1,28 +1,46 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/User');
 
-const requireAdmin = async(req, res, next) => {
-  const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
+const roles = {
+  ADMIN: 'admin',
+  BASIC: "basic",
+  SUPERADMIN: 'superAdmin'
+};
 
-  if(token) {
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+const roleAuth = (role = 'basic') => {
+  return (req, res, next) => {
 
-      const user = await userModel.find({ id: payload.id });
+    const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
 
-     if(user.role !== "admin") {
-       res.status(401).send("Unauthorized")
-     }
+    if(token) {
+      try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
-      next();
-    } catch(err) {
+        userModel.findOne({ _id: payload.id }).exec((err, user) => {
+
+          if(err) {
+            return res.status(500).send('Server error');
+          }
+
+          if(user.role === roles.SUPERADMIN) {
+            return next()
+          }
+
+          if(user.role !== role) {
+            return res.status(401).send('Unauthorized');
+          }
+
+          next();
+        });
+      } catch(err) {
+        res.status(401).send('Unauthorized');
+      }
+    } else {
       res.status(401).send('Unauthorized');
     }
-  } else {
-    res.status(401).send('Unauthorized');
-  }
+  };
 
 };
 
-module.exports = { requireAdmin };
+module.exports = { roleAuth };
 
