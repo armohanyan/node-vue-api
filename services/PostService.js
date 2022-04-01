@@ -8,7 +8,7 @@ module.exports = class extends BaseService {
     super();
   }
 
-  async index(req) {
+  async filterPosts(req) {
     try {
       const { orderBy } = req.query;
 
@@ -103,7 +103,7 @@ module.exports = class extends BaseService {
 
       return  this.responseBuilder
                   .setSuccess(false)
-                  .setMessage('Post ID is reuired')
+                  .setMessage('Post ID is required')
                   .setStatus(400)
                   .generateResponse();
       
@@ -130,7 +130,7 @@ module.exports = class extends BaseService {
 
        return  this.responseBuilder
                   .setSuccess(false)
-                  .setMessage('Post ID is reuired')
+                  .setMessage('Post ID is required')
                   .setStatus(400)
                   .generateResponse();
 
@@ -151,7 +151,7 @@ module.exports = class extends BaseService {
       if(!id) {
          return  this.responseBuilder
                   .setSuccess(false)
-                  .setMessage('Post ID is reuired')
+                  .setMessage('Post ID is required')
                   .setStatus(400)
                   .generateResponse();
 
