@@ -26,53 +26,53 @@ module.exports = class extends BaseService {
       });
 
       return this.responseBuilder
-                 .setData({
-                   posts: filteredPosts
-                 })
-                 .generateResponse();
+        .setData({
+          posts: filteredPosts
+        })
+        .generateResponse();
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .setData(error)
-                 .generateResponse();
+        .setSuccess(false)
+        .setStatus(500)
+        .setData(error)
+        .generateResponse();
     }
   }
 
   async create(req) {
     try {
       const errors = this.handleErrors(req);
-      if(errors.hasErrors) { 
-        return errors.body; 
+      if (errors.hasErrors) {
+        return errors.body;
       }
 
       const { title, body } = req.body;
 
       const post = await postModel.create({
         title,
-        body, 
+        body,
         image: (req.file && req.file.filename) || null
       });
 
       return this.responseBuilder
-                 .setStatus(201)
-                 .setData({
-                   post: {
-                     id: post._id,
-                     title: post.title,
-                     body: post.body,
-                     image: post.image,
-                     created: post.createdAt
-                   }
-                 })
-                 .generateResponse();
-    } catch(error) {
+        .setStatus(201)
+        .setData({
+          post: {
+            id: post._id,
+            title: post.title,
+            body: post.body,
+            image: post.image,
+            created: post.createdAt
+          }
+        })
+        .generateResponse();
+    } catch (error) {
       return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .setData(error)
-                 .generateResponse();
+        .setSuccess(false)
+        .setStatus(500)
+        .setData(error)
+        .generateResponse();
     }
   };
 
@@ -80,39 +80,39 @@ module.exports = class extends BaseService {
     try {
       const { id } = req.query;
 
-      if(id) {
+      if (id) {
         const post = await postModel.findOne({ _id: id });
 
-        if(!post) {
+        if (!post) {
           return this.responseBuilder
-                     .setSuccess(false)
-                     .setMessage('Post not found')
-                     .setStatus(404)
-                     .generateResponse();
+            .setSuccess(false)
+            .setMessage('Post not found')
+            .setStatus(404)
+            .generateResponse();
         }
 
         return this.responseBuilder
-                   .setData({
-                     id: post.id,
-                     title: post.title,
-                     body: post.body,
-                     created: post.createdAt
-                   })
-                   .generateResponse();
+          .setData({
+            id: post.id,
+            title: post.title,
+            body: post.body,
+            created: post.createdAt
+          })
+          .generateResponse();
       }
 
-      return  this.responseBuilder
-                  .setSuccess(false)
-                  .setMessage('Post ID is required')
-                  .setStatus(400)
-                  .generateResponse();
-      
-    } catch(error) {
       return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .setData(error)
-                 .generateResponse();
+        .setSuccess(false)
+        .setMessage('Post ID is required')
+        .setStatus(400)
+        .generateResponse();
+
+    } catch (error) {
+      return this.responseBuilder
+        .setSuccess(false)
+        .setStatus(500)
+        .setData(error)
+        .generateResponse();
     }
   };
 
@@ -120,26 +120,26 @@ module.exports = class extends BaseService {
     try {
       const { id } = req.body;
 
-      if(id) {
+      if (id) {
         await postModel.deleteOne({ _id: id }).exec();
 
         return this.responseBuilder
-                   .setMessage("Deleted")
-                   .generateResponse();
+          .setMessage("Deleted")
+          .generateResponse();
       }
 
-       return  this.responseBuilder
-                  .setSuccess(false)
-                  .setMessage('Post ID is required')
-                  .setStatus(400)
-                  .generateResponse();
-
-    } catch(error) {
       return this.responseBuilder
-                 .setStatus(500)
-                 .setData(error)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setSuccess(false)
+        .setMessage('Post ID is required')
+        .setStatus(400)
+        .generateResponse();
+
+    } catch (error) {
+      return this.responseBuilder
+        .setStatus(500)
+        .setData(error)
+        .setSuccess(false)
+        .generateResponse();
     }
   }
 
@@ -148,18 +148,18 @@ module.exports = class extends BaseService {
       const { title, body } = req.body;
       const { id } = req.query;
 
-      if(!id) {
-         return  this.responseBuilder
-                  .setSuccess(false)
-                  .setMessage('Post ID is required')
-                  .setStatus(400)
-                  .generateResponse();
+      if (!id) {
+        return this.responseBuilder
+          .setSuccess(false)
+          .setMessage('Post ID is required')
+          .setStatus(400)
+          .generateResponse();
 
       }
 
       const post = await postModel.findOne({ id });
 
-      if(post && post.image) {
+      if (post && post.image) {
         fs.unlinkSync('public/images/' + post.image);
       }
 
@@ -171,15 +171,15 @@ module.exports = class extends BaseService {
       );
 
       return this.responseBuilder
-                 .setMessage('Post updated successfully')
-                 .generateResponse();
+        .setMessage('Post updated successfully')
+        .generateResponse();
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .setData(error)
-                 .generateResponse();
+        .setSuccess(false)
+        .setStatus(500)
+        .setData(error)
+        .generateResponse();
     }
   }
 };

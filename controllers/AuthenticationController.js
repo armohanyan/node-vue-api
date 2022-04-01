@@ -34,8 +34,8 @@ class AuthenticationController {
   }
 
   async resetPassword(req, res) {
-      const data = await authService.resetPassword(req);
-      res.status(data.statusCode).json(data);
+    const data = await authService.resetPassword(req);
+    res.status(data.statusCode).json(data);
   }
 
 }

@@ -10,7 +10,7 @@ module.exports = class BaseService {
   handleErrors(request) {
     const { errors } = validationResult(request);
 
-    if(errors && errors.length) {
+    if (errors && errors.length) {
       const filteredErrors = {
         property: errors[0].param,
         message: errors[0].msg
@@ -19,10 +19,10 @@ module.exports = class BaseService {
       return {
         hasErrors: true,
         body: this.responseBuilder
-                  .setSuccess(false)
-                  .setStatus(400)
-                  .setValidationError(filteredErrors)
-                  .generateResponse()
+          .setSuccess(false)
+          .setStatus(400)
+          .setValidationError(filteredErrors)
+          .generateResponse()
       };
     }
     return {

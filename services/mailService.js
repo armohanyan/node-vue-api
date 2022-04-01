@@ -36,6 +36,9 @@ module.exports = class MailService {
       to: email,
       subject: subject,
       html: `<a href="${newUrl}">${purpose}</a>`
-    }).then(sent => {}).catch(err => { throw err; });
+    }).then(sent => {
+    }).catch(err => {
+      throw err;
+    });
   }
 };

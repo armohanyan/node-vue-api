@@ -5,7 +5,7 @@ exports.ResponseBuilder = class ResponseBuilder {
   #message = '';
   #validationError = {};
 
-  constructor() {}
+  constructor() { }
 
   setStatus(statusCode) {
     this.#statusCode = statusCode;

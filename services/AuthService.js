@@ -11,54 +11,45 @@ module.exports = class AuthService extends BaseService {
     super();
   }
 
-  /**
-   * @param req: {
-   * email,
-   * password,
-   * firstName,
-   * lastName
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async signUp(req) {
     try {
       const { email, password, firstName, lastName } = req.body;
 
       const err = this.handleErrors(req);
-      if(err.hasErrors) { 
-        return err.body; 
+      if (err.hasErrors) {
+        return err.body;
       }
 
       const user = await userModel.findOne({ email }).exec();
 
-      if(user) {
+      if (user) {
         return this.responseBuilder
-                   .setMessage('User already registered')
-                   .setSuccess(false)
-                   .setStatus(409)
-                   .generateResponse();
+          .setMessage('User already registered')
+          .setSuccess(false)
+          .setStatus(409)
+          .generateResponse();
       }
 
       const confirmationToken = createToken({
-        payload: { 
-          email 
-        }, 
-        secret: process.env.JWT_EMAIL_SECRET, 
+        payload: {
+          email
+        },
+        secret: process.env.JWT_EMAIL_SECRET,
         options: {
           expiresIn: '2m'
         }
       });
 
       const createUser = await userModel.create({
-        confirmationToken, 
-        firstName, 
-        lastName, 
-        password, 
-        email, 
+        confirmationToken,
+        firstName,
+        lastName,
+        password,
+        email,
         role: "basic"
       });
 
-      if(createUser) {
+      if (createUser) {
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
         mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
@@ -70,42 +61,34 @@ module.exports = class AuthService extends BaseService {
         });
 
         return this.responseBuilder
-                   .setMessage('User registered')
-                   .setStatus(201)
-                   .setData({ token })
-                   .generateResponse();
+          .setMessage('User registered')
+          .setStatus(201)
+          .setData({ token })
+          .generateResponse();
 
       }
-    } catch(err) {
+    } catch (err) {
       return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .generateResponse();
+        .setSuccess(false)
+        .setStatus(500)
+        .generateResponse();
     }
-
   };
 
-  /**
-   * @param req: {
-   * email
-   * password
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async signIn(req) {
     try {
       const err = this.handleErrors(req);
-      if(err.hasErrors) { 
-        return err.body; 
+      if (err.hasErrors) {
+        return err.body;
       }
 
       const { email, password } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
 
-      if(user && bcrypt.compareSync(password, user.password)) {
+      if (user && bcrypt.compareSync(password, user.password)) {
 
-        if(user.isVerified) {
+        if (user.isVerified) {
           const token = createToken({
             payload: {
               id: user._id
@@ -113,68 +96,62 @@ module.exports = class AuthService extends BaseService {
           });
 
           return this.responseBuilder
-                     .setData({
-                       token,
-                       user: {
-                         firstName: user.firstName,
-                         lastName: user.lastName,
-                         email: user.email,
-                         isVerified: user.isVerified,
-                         role: user.role
-                       }
-                     }).generateResponse();
+            .setData({
+              token,
+              user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                isVerified: user.isVerified,
+                role: user.role
+              }
+            }).generateResponse();
 
         } else {
           return this.responseBuilder
-                     .setData({ isVerified: false })
-                     .setStatus(401)
-                     .setMessage('Email is not verified')
-                     .setSuccess(false)
-                     .generateResponse();
+            .setData({ isVerified: false })
+            .setStatus(401)
+            .setMessage('Email is not verified')
+            .setSuccess(false)
+            .generateResponse();
         }
       }
 
       return this.responseBuilder
-                 .setStatus(401)
-                 .setMessage('Incorrect email and/or  password')
-                 .setSuccess(false)
-                 .generateResponse();
+        .setStatus(401)
+        .setMessage('Incorrect email and/or  password')
+        .setSuccess(false)
+        .generateResponse();
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setData(error)
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setData(error)
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
 
   };
 
-  /**
-   * @param req: {
-   * email
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async requestVerifyEmail(req) {
     try {
       const { email } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
 
-      if(!user) {
+      if (!user) {
         return this.responseBuilder
-                   .setStatus(400)
-                   .setMessage('Invalid Email')
-                   .setSuccess(false)
-                   .generateResponse();
+          .setStatus(400)
+          .setMessage('Invalid Email')
+          .setSuccess(false)
+          .generateResponse();
       }
 
       const confirmationToken = createToken({
-        payload: { 
-          email 
+        payload: {
+          email
         },
-        secret: process.env.JWT_EMAIL_SECRET, 
+        secret: process.env.JWT_EMAIL_SECRET,
         options: {
           expiresIn: '2m'
         }
@@ -189,243 +166,217 @@ module.exports = class AuthService extends BaseService {
       mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
       return this.responseBuilder
-                 .setMessage('Token was sent to email')
-                 .generateResponse();
+        .setMessage('Token was sent to email')
+        .generateResponse();
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setData(error)
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setData(error)
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
   };
 
-  /**
-   * @param req: {
-   * email
-   * token
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async verifyEmail(req) {
     try {
       const { email, token } = req.body;
-      if(token && verifyToken({ token, secret: process.env.JWT_EMAIL_SECRET })) {
+      if (token && verifyToken({ token, secret: process.env.JWT_EMAIL_SECRET })) {
 
         const isValidUser = await userModel.findOne({ email }).exec();
 
-        if(!isValidUser) {
+        if (!isValidUser) {
           return this.responseBuilder
-                     .setStatus(404)
-                     .setMessage('User does not found')
-                     .setSuccess(false)
-                     .generateResponse();
+            .setStatus(404)
+            .setMessage('User does not found')
+            .setSuccess(false)
+            .generateResponse();
         }
 
-        if(isValidUser.isVerified) {
+        if (isValidUser.isVerified) {
           return this.responseBuilder
-                     .setMessage('User has already verified')
-                     .generateResponse();
+            .setMessage('User has already verified')
+            .generateResponse();
         }
 
-        const user = await userModel.findOne({ 
-          email, 
-          confirmationToken: token 
+        const user = await userModel.findOne({
+          email,
+          confirmationToken: token
         }).exec();
 
         await userModel.updateOne({
-          _id: user._id, 
-          isVerified: true, 
+          _id: user._id,
+          isVerified: true,
           confirmationToken: null
         });
 
         return this.responseBuilder
-                   .setMessage('Email successfully confirmed')
-                   .generateResponse();
+          .setMessage('Email successfully confirmed')
+          .generateResponse();
 
       } else {
         return this.responseBuilder
-                   .setStatus(401)
-                   .setMessage('Invalid or expire token')
-                   .setSuccess(false)
-                   .generateResponse();
+          .setStatus(401)
+          .setMessage('Invalid or expire token')
+          .setSuccess(false)
+          .generateResponse();
       }
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setData(error)
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setData(error)
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
   };
 
-  /**
-   * @param req: {
-   * email
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async resendVerificationToken(req) {
     try {
       const { email } = req.body;
 
       const user = await userModel.findOne({ email }).exec();
 
-      if(user) {
+      if (user) {
         const confirmationToken = createToken({
-          payload: { 
-            email 
-          }, 
-          secret: process.env.JWT_EMAIL_SECRET, 
-          options: { 
-            expiresIn: '2m' 
+          payload: {
+            email
+          },
+          secret: process.env.JWT_EMAIL_SECRET,
+          options: {
+            expiresIn: '2m'
           }
         });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
         await userModel.updateOne({
-          email, 
+          email,
           confirmationToken
         });
 
         mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
 
         return this.responseBuilder
-                   .setMessage('Token was sent to email')
-                   .generateResponse();
+          .setMessage('Token was sent to email')
+          .generateResponse();
 
       } else {
         return this.responseBuilder
-                   .setStatus(404)
-                   .setMessage('User does not found')
-                   .setSuccess(false)
-                   .generateResponse();
+          .setStatus(404)
+          .setMessage('User does not found')
+          .setSuccess(false)
+          .generateResponse();
       }
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setData(error)
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setData(error)
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
 
   };
 
-  /**
-   * @param req: {
-   * email
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async verifyEmailOnResetPassword(req) {
     try {
       const { email } = req.body;
       const user = await userModel.findOne({ email }).exec();
 
-      if(!user) {
+      if (!user) {
         return this.responseBuilder
-                   .setStatus(404)
-                   .setMessage('User does not found')
-                   .setSuccess(false)
-                   .generateResponse();
+          .setStatus(404)
+          .setMessage('User does not found')
+          .setSuccess(false)
+          .generateResponse();
       }
 
       const confirmationToken = createToken({
-        payload: { 
-          email 
+        payload: {
+          email
         },
         secret: process.env.JWT_PASSOWRD_RESET_SECRET,
-        options: { 
-          expiresIn: '10m' 
+        options: {
+          expiresIn: '10m'
         }
       });
 
-      const updateUserConfirmationToken = await userModel.updateOne({ 
-        email, 
-        confirmationToken 
+      const updateUserConfirmationToken = await userModel.updateOne({
+        email,
+        confirmationToken
       });
 
-      if(updateUserConfirmationToken) {
+      if (updateUserConfirmationToken) {
         const url = `reset-password?email=${email}&token=${confirmationToken}`;
 
         mailService.sendMail(email, url, 'Reset Password', 'Please click to reset your password');
       }
 
       return this.responseBuilder
-                 .setMessage('Token was sent to email')
-                 .generateResponse();
+        .setMessage('Token was sent to email')
+        .generateResponse();
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setData(error)
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
+        .setData(error)
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
 
   }
 
-  /**
-   * @param req: {
-   * password
-   * }
-   * @returns {Promise<{ ResponseBuilder }>}
-   */
   async resetPassword(req) {
     try {
       const validationError = this.handleErrors(req);
-      if(validationError.hasErrors) { 
-        return validationError.body; 
+      if (validationError.hasErrors) {
+        return validationError.body;
       }
 
       const { password } = req.body;
 
       const token = req?.headers?.authorization?.split(' ')[1] || null;
       const isTokenValid = verifyToken({
-        token, 
+        token,
         secret: process.env.JWT_PASSOWRD_RESET_SECRET
       });
 
-      if(isTokenValid) {
+      if (isTokenValid) {
         const { email } = isTokenValid;
         const user = await userModel.findOne({ email });
 
-        if(!user) {
+        if (!user) {
           return this.responseBuilder
-                     .setStatus(404)
-                     .setMessage('User does not found')
-                     .setSuccess(false)
-                     .generateResponse();
+            .setStatus(404)
+            .setMessage('User does not found')
+            .setSuccess(false)
+            .generateResponse();
         }
 
         const resetUserPassword = await userModel.updateOne({
           email, password, confirmationToken: null
         });
 
-        if(resetUserPassword) {
+        if (resetUserPassword) {
           return this.responseBuilder
-                     .setMessage('Password reset successfully')
-                     .generateResponse();
+            .setMessage('Password reset successfully')
+            .generateResponse();
 
         }
       } else {
         return this.responseBuilder
-                   .setStatus(401)
-                   .setMessage('Invalid token')
-                   .setSuccess(false)
-                   .generateResponse();
+          .setStatus(401)
+          .setMessage('Invalid token')
+          .setSuccess(false)
+          .generateResponse();
 
       }
 
-    } catch(error) {
+    } catch (error) {
       return this.responseBuilder
-                 .setStatus(500)
-                 .setSuccess(false)
-                 .generateResponse();
-
+        .setStatus(500)
+        .setSuccess(false)
+        .generateResponse();
     }
   };
 };

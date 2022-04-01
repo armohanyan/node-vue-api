@@ -28,14 +28,14 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   this.password = bcrypt.hashSync(this.password, 12);
   next();
 });
 
-userSchema.pre('updateOne', async function(next) {
+userSchema.pre('updateOne', async function (next) {
   const updatedData = this.getUpdate();
-  if(updatedData.password) updatedData.password = bcrypt.hashSync(updatedData.password, 12);
+  if (updatedData.password) updatedData.password = bcrypt.hashSync(updatedData.password, 12);
   next();
 });
 
