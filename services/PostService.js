@@ -1,9 +1,8 @@
-const postModel = require('../models/Post');
-const BaseService = require('./BaseService');
-const fs = require('fs');
+const postModel = require("../models/Post");
+const BaseService = require("./BaseService");
+const fs = require("fs");
 
 module.exports = class extends BaseService {
-
   constructor() {
     super();
   }
@@ -12,25 +11,27 @@ module.exports = class extends BaseService {
     try {
       const { orderBy } = req.query;
 
-      const [field, sort] = (orderBy || 'createdAt:-1').split(':');
+      const [field, sort] = (orderBy || "createdAt:-1").split(":");
 
-      const posts = await postModel.find({}).sort([[field, sort]]).exec();
+      const posts = await postModel
+        .find({})
+        .sort([[field, sort]])
+        .exec();
 
-      let filteredPosts = posts.map(post => {
+      let filteredPosts = posts.map((post) => {
         return {
           id: post._id,
           title: post.title,
           body: post.body,
-          created: post.createdAt
+          created: post.createdAt,
         };
       });
 
       return this.responseBuilder
         .setData({
-          posts: filteredPosts
+          posts: filteredPosts,
         })
         .generateResponse();
-
     } catch (error) {
       return this.responseBuilder
         .setSuccess(false)
@@ -52,7 +53,7 @@ module.exports = class extends BaseService {
       const post = await postModel.create({
         title,
         body,
-        image: (req.file && req.file.filename) || null
+        image: (req.file && req.file.filename) || null,
       });
 
       return this.responseBuilder
@@ -63,8 +64,8 @@ module.exports = class extends BaseService {
             title: post.title,
             body: post.body,
             image: post.image,
-            created: post.createdAt
-          }
+            created: post.createdAt,
+          },
         })
         .generateResponse();
     } catch (error) {
@@ -74,7 +75,7 @@ module.exports = class extends BaseService {
         .setData(error)
         .generateResponse();
     }
-  };
+  }
 
   async show(req) {
     try {
@@ -86,7 +87,7 @@ module.exports = class extends BaseService {
         if (!post) {
           return this.responseBuilder
             .setSuccess(false)
-            .setMessage('Post not found')
+            .setMessage("Post not found")
             .setStatus(404)
             .generateResponse();
         }
@@ -96,17 +97,16 @@ module.exports = class extends BaseService {
             id: post.id,
             title: post.title,
             body: post.body,
-            created: post.createdAt
+            created: post.createdAt,
           })
           .generateResponse();
       }
 
       return this.responseBuilder
         .setSuccess(false)
-        .setMessage('Post ID is required')
+        .setMessage("Post ID is required")
         .setStatus(400)
         .generateResponse();
-
     } catch (error) {
       return this.responseBuilder
         .setSuccess(false)
@@ -114,7 +114,7 @@ module.exports = class extends BaseService {
         .setData(error)
         .generateResponse();
     }
-  };
+  }
 
   async delete(req) {
     try {
@@ -123,17 +123,14 @@ module.exports = class extends BaseService {
       if (id) {
         await postModel.deleteOne({ _id: id }).exec();
 
-        return this.responseBuilder
-          .setMessage("Deleted")
-          .generateResponse();
+        return this.responseBuilder.setMessage("Deleted").generateResponse();
       }
 
       return this.responseBuilder
         .setSuccess(false)
-        .setMessage('Post ID is required')
+        .setMessage("Post ID is required")
         .setStatus(400)
         .generateResponse();
-
     } catch (error) {
       return this.responseBuilder
         .setStatus(500)
@@ -151,29 +148,29 @@ module.exports = class extends BaseService {
       if (!id) {
         return this.responseBuilder
           .setSuccess(false)
-          .setMessage('Post ID is required')
+          .setMessage("Post ID is required")
           .setStatus(400)
           .generateResponse();
-
       }
 
       const post = await postModel.findOne({ id });
 
       if (post && post.image) {
-        fs.unlinkSync('public/images/' + post.image);
+        fs.unlinkSync("public/images/" + post.image);
       }
 
-      await postModel.findOneAndUpdate({ id }, {
+      await postModel.findOneAndUpdate(
+        { id },
+        {
           title,
           body,
-          image: (req.file && req.file.filename) || null
+          image: (req.file && req.file.filename) || null,
         }
       );
 
       return this.responseBuilder
-        .setMessage('Post updated successfully')
+        .setMessage("Post updated successfully")
         .generateResponse();
-
     } catch (error) {
       return this.responseBuilder
         .setSuccess(false)

@@ -1,7 +1,6 @@
 const PostService = require("../services/PostService");
 
 class PostController {
-
   constructor() {
     this.postService = new PostService();
   }

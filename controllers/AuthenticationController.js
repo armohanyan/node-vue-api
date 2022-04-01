@@ -1,8 +1,7 @@
-const AuthService = require('../services/AuthService');
-const authService = new AuthService;
+const AuthService = require("../services/AuthService");
+const authService = new AuthService();
 
 class AuthenticationController {
-
   async signUp(req, res) {
     const data = await authService.signUp(req);
     res.status(data.statusCode).json(data);
@@ -37,7 +36,6 @@ class AuthenticationController {
     const data = await authService.resetPassword(req);
     res.status(data.statusCode).json(data);
   }
-
 }
 
 module.exports = AuthenticationController;

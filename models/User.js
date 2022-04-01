@@ -1,44 +1,45 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
   firstName: {
-    type: String
+    type: String,
   },
   lastName: {
-    type: String
+    type: String,
   },
   email: {
-    type: String
+    type: String,
   },
   password: {
-    type: String
+    type: String,
   },
   confirmationToken: {
     type: String,
-    default: null
+    default: null,
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
   role: {
     type: String,
-    default: 'basic'
-  }
+    default: "basic",
+  },
 });
 
-userSchema.pre('save', async function (next) {
+userSchema.pre("save", async function (next) {
   this.password = bcrypt.hashSync(this.password, 12);
   next();
 });
 
-userSchema.pre('updateOne', async function (next) {
+userSchema.pre("updateOne", async function (next) {
   const updatedData = this.getUpdate();
-  if (updatedData.password) updatedData.password = bcrypt.hashSync(updatedData.password, 12);
+  if (updatedData.password)
+    updatedData.password = bcrypt.hashSync(updatedData.password, 12);
   next();
 });
 
-const User = mongoose.model('user', userSchema);
+const User = mongoose.model("user", userSchema);
 
 module.exports = User;

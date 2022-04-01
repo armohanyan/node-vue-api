@@ -1,8 +1,8 @@
-const AccountService = require("../services/AccountService")
+const AccountService = require("../services/AccountService");
 
 class AccountController {
   constructor() {
-    this.accountService = new AccountService()
+    this.accountService = new AccountService();
   }
 
   async current(req, res) {

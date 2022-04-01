@@ -1,8 +1,7 @@
-const { validationResult } = require('express-validator');
-const { ResponseBuilder } = require('./ResponseBuilder');
+const { validationResult } = require("express-validator");
+const { ResponseBuilder } = require("./ResponseBuilder");
 
 module.exports = class BaseService {
-
   constructor() {
     this.responseBuilder = new ResponseBuilder();
   }
@@ -13,7 +12,7 @@ module.exports = class BaseService {
     if (errors && errors.length) {
       const filteredErrors = {
         property: errors[0].param,
-        message: errors[0].msg
+        message: errors[0].msg,
       };
 
       return {
@@ -22,11 +21,11 @@ module.exports = class BaseService {
           .setSuccess(false)
           .setStatus(400)
           .setValidationError(filteredErrors)
-          .generateResponse()
+          .generateResponse(),
       };
     }
     return {
-      hasErrors: false
+      hasErrors: false,
     };
   }
 };

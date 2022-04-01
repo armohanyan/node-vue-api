@@ -2,10 +2,10 @@ exports.ResponseBuilder = class ResponseBuilder {
   #statusCode = 200;
   #status = true;
   #data = {};
-  #message = '';
+  #message = "";
   #validationError = {};
 
-  constructor() { }
+  constructor() {}
 
   setStatus(statusCode) {
     this.#statusCode = statusCode;
@@ -38,8 +38,7 @@ exports.ResponseBuilder = class ResponseBuilder {
       status: this.#status,
       data: this.#data,
       message: this.#message,
-      validationError: this.#validationError
+      validationError: this.#validationError,
     };
   }
-
 };
