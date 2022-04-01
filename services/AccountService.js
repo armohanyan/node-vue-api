@@ -30,7 +30,7 @@ class AccountService extends BaseService {
         if(!user) {
           return this.responseBuilder
                      .setSuccess(false)
-                     .setStatus(400)
+                     .setStatus(404)
                      .setMessage('User not found')
                      .generateResponse();
         }
