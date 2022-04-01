@@ -25,7 +25,9 @@ module.exports = class AuthService extends BaseService {
       const { email, password, firstName, lastName } = req.body;
 
       const err = this.handleErrors(req);
-      if(err.hasErrors) { return err.body; }
+      if(err.hasErrors) { 
+        return err.body; 
+      }
 
       const user = await userModel.findOne({ email }).exec();
 
@@ -38,13 +40,22 @@ module.exports = class AuthService extends BaseService {
       }
 
       const confirmationToken = createToken({
-        payload: { email }, secret: process.env.JWT_EMAIL_SECRET, options: {
+        payload: { 
+          email 
+        }, 
+        secret: process.env.JWT_EMAIL_SECRET, 
+        options: {
           expiresIn: '2m'
         }
       });
 
       const createUser = await userModel.create({
-        confirmationToken, firstName, lastName, password, email, role: "basic"
+        confirmationToken, 
+        firstName, 
+        lastName, 
+        password, 
+        email, 
+        role: "basic"
       });
 
       if(createUser) {
@@ -84,7 +95,9 @@ module.exports = class AuthService extends BaseService {
   async signIn(req) {
     try {
       const err = this.handleErrors(req);
-      if(err.hasErrors) { return err.body; }
+      if(err.hasErrors) { 
+        return err.body; 
+      }
 
       const { email, password } = req.body;
 
@@ -109,8 +122,7 @@ module.exports = class AuthService extends BaseService {
                          isVerified: user.isVerified,
                          role: user.role
                        }
-                     })
-                     .generateResponse();
+                     }).generateResponse();
 
         } else {
           return this.responseBuilder
@@ -159,8 +171,11 @@ module.exports = class AuthService extends BaseService {
       }
 
       const confirmationToken = createToken({
-        payload: { email },
-        secret: process.env.JWT_EMAIL_SECRET, options: {
+        payload: { 
+          email 
+        },
+        secret: process.env.JWT_EMAIL_SECRET, 
+        options: {
           expiresIn: '2m'
         }
       });
@@ -214,10 +229,15 @@ module.exports = class AuthService extends BaseService {
                      .generateResponse();
         }
 
-        const user = await userModel.findOne({ email, confirmationToken: token }).exec();
+        const user = await userModel.findOne({ 
+          email, 
+          confirmationToken: token 
+        }).exec();
 
         await userModel.updateOne({
-          _id: user._id, isVerified: true, confirmationToken: null
+          _id: user._id, 
+          isVerified: true, 
+          confirmationToken: null
         });
 
         return this.responseBuilder
@@ -254,13 +274,20 @@ module.exports = class AuthService extends BaseService {
 
       if(user) {
         const confirmationToken = createToken({
-          payload: { email }, secret: process.env.JWT_EMAIL_SECRET, options: { expiresIn: '2m' }
+          payload: { 
+            email 
+          }, 
+          secret: process.env.JWT_EMAIL_SECRET, 
+          options: { 
+            expiresIn: '2m' 
+          }
         });
 
         const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
         await userModel.updateOne({
-          email, confirmationToken
+          email, 
+          confirmationToken
         });
 
         mailService.sendMail(email, url, 'Email verification', 'Please click to verify your email');
@@ -307,12 +334,19 @@ module.exports = class AuthService extends BaseService {
       }
 
       const confirmationToken = createToken({
-        payload: { email },
+        payload: { 
+          email 
+        },
         secret: process.env.JWT_PASSOWRD_RESET_SECRET,
-        options: { expiresIn: '10m' }
+        options: { 
+          expiresIn: '10m' 
+        }
       });
 
-      const updateUserConfirmationToken = await userModel.updateOne({ email, confirmationToken });
+      const updateUserConfirmationToken = await userModel.updateOne({ 
+        email, 
+        confirmationToken 
+      });
 
       if(updateUserConfirmationToken) {
         const url = `reset-password?email=${email}&token=${confirmationToken}`;
@@ -343,13 +377,16 @@ module.exports = class AuthService extends BaseService {
   async resetPassword(req) {
     try {
       const validationError = this.handleErrors(req);
-      if(validationError.hasErrors) { return validationError.body; }
+      if(validationError.hasErrors) { 
+        return validationError.body; 
+      }
 
       const { password } = req.body;
 
       const token = req?.headers?.authorization?.split(' ')[1] || null;
       const isTokenValid = verifyToken({
-        token, secret: process.env.JWT_PASSOWRD_RESET_SECRET
+        token, 
+        secret: process.env.JWT_PASSOWRD_RESET_SECRET
       });
 
       if(isTokenValid) {
