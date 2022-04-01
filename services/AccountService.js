@@ -16,7 +16,7 @@ class AccountService extends BaseService {
       if(!token) {
         return this.responseBuilder
                    .setSuccess(false)
-                   .setStatus(400)
+                   .setStatus(401)
                    .setMessage('Missing data')
                    .generateResponse();
       }
