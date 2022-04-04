@@ -1,10 +1,6 @@
 const { validationResult } = require("express-validator");
-const { ResponseBuilder } = require("./ResponseBuilder");
 
 module.exports = class BaseService {
-  constructor() {
-    this.responseBuilder = new ResponseBuilder();
-  }
 
   handleErrors(request) {
     const { errors } = validationResult(request);
@@ -17,15 +13,41 @@ module.exports = class BaseService {
 
       return {
         hasErrors: true,
-        body: this.responseBuilder
-          .setSuccess(false)
-          .setStatus(400)
-          .setValidationError(filteredErrors)
-          .generateResponse(),
+        body: {
+          success: false,
+          statusCode: 400,
+          validationError: filteredErrors
+        }
       };
     }
     return {
       hasErrors: false,
     };
+  }
+
+  response({
+    status = true,
+    statusCode= 200,
+    data = {},
+    message =  "",
+    validationError = {}
+  }) {
+    return {
+      status,
+      statusCode,
+      data,
+      message,
+      validationError
+    }
+  }
+
+  serverErrorResponse(error) {
+    return {
+      status: false,
+      statusCode: 500,
+      data: error,
+      message: "Server Error",
+      validationError: {}
+    }
   }
 };
