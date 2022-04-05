@@ -10,12 +10,17 @@ const CreatePostValidation = require("../common/validation/CreatePostValidation"
 const postController = new PostsController();
 const router = Router();
 
-router.get("/", requireAuth, postController.filterPosts.bind(postController));
+router.get(
+  "/", requireAuth,
+  postController.filterPosts.bind(postController)
+);
+
 router.delete(
   "/",
   roleAuth("admin"),
   postController.delete.bind(postController)
 );
+
 router.post(
   "/",
   roleAuth("basic", "admin"),
@@ -23,6 +28,10 @@ router.post(
   CreatePostValidation,
   postController.create.bind(postController)
 );
-router.get("/show/", requireAuth, postController.show.bind(postController));
+
+router.get("/show/",
+  requireAuth,
+  postController.show.bind(postController)
+);
 
 module.exports = router;

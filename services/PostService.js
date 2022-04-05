@@ -1,6 +1,6 @@
-const postModel = require("../models/Post");
-const BaseService = require("./BaseService");
-const fs = require("fs");
+const postModel = require('../models/Post');
+const BaseService = require('./BaseService');
+const fs = require('fs');
 
 module.exports = class extends BaseService {
   constructor() {
@@ -11,7 +11,7 @@ module.exports = class extends BaseService {
     try {
       const { orderBy } = req.query;
 
-      const [field, sort] = (orderBy || "createdAt:-1").split(":");
+      const [field, sort] = (orderBy || 'createdAt:-1').split(':');
 
       const posts = await postModel
         .find({})
@@ -23,28 +23,25 @@ module.exports = class extends BaseService {
           id: post._id,
           title: post.title,
           body: post.body,
-          created: post.createdAt,
+          created: post.createdAt
         };
       });
 
-      return this.responseBuilder
-        .setData({
-          posts: filteredPosts,
-        })
-        .generateResponse();
-    } catch (error) {
-      return this.responseBuilder
-        .setSuccess(false)
-        .setStatus(500)
-        .setData(error)
-        .generateResponse();
+      return this.response({
+        data: {
+          posts: filteredPosts
+        }
+      });
+
+    } catch(error) {
+      return this.serverErrorResponse(error)
     }
   }
 
   async create(req) {
     try {
       const errors = this.handleErrors(req);
-      if (errors.hasErrors) {
+      if(errors.hasErrors) {
         return errors.body;
       }
 
@@ -53,27 +50,24 @@ module.exports = class extends BaseService {
       const post = await postModel.create({
         title,
         body,
-        image: (req.file && req.file.filename) || null,
+        image: (req.file && req.file.filename) || null
       });
 
-      return this.responseBuilder
-        .setStatus(201)
-        .setData({
+      return this.response({
+        statusCode: 201,
+        data: {
           post: {
             id: post._id,
             title: post.title,
             body: post.body,
             image: post.image,
-            created: post.createdAt,
-          },
-        })
-        .generateResponse();
-    } catch (error) {
-      return this.responseBuilder
-        .setSuccess(false)
-        .setStatus(500)
-        .setData(error)
-        .generateResponse();
+            created: post.createdAt
+          }
+        }
+      });
+
+    } catch(error) {
+      return this.serverErrorResponse(error);
     }
   }
 
@@ -81,38 +75,34 @@ module.exports = class extends BaseService {
     try {
       const { id } = req.query;
 
-      if (id) {
+      if(id) {
         const post = await postModel.findOne({ _id: id });
 
-        if (!post) {
-          return this.responseBuilder
-            .setSuccess(false)
-            .setMessage("Post not found")
-            .setStatus(404)
-            .generateResponse();
+        if(!post) {
+          return this.response({
+            status: false,
+            statusCode: 400,
+            message: 'Post does not found'
+          });
         }
 
-        return this.responseBuilder
-          .setData({
+        return this.response({
+          data: {
             id: post.id,
             title: post.title,
             body: post.body,
-            created: post.createdAt,
-          })
-          .generateResponse();
+            created: post.createdAt
+          }
+        });
       }
 
-      return this.responseBuilder
-        .setSuccess(false)
-        .setMessage("Post ID is required")
-        .setStatus(400)
-        .generateResponse();
-    } catch (error) {
-      return this.responseBuilder
-        .setSuccess(false)
-        .setStatus(500)
-        .setData(error)
-        .generateResponse();
+      return this.response({
+        status: false,
+        statusCode: 400,
+        message: 'Post ID is required'
+      });
+    } catch(error) {
+      return this.serverErrorResponse(error);
     }
   }
 
@@ -120,23 +110,22 @@ module.exports = class extends BaseService {
     try {
       const { id } = req.body;
 
-      if (id) {
+      if(id) {
         await postModel.deleteOne({ _id: id }).exec();
-
-        return this.responseBuilder.setMessage("Deleted").generateResponse();
+        return this.response({
+          status: false,
+          statusCode: 400,
+          message: 'Deleted'
+        });
       }
 
-      return this.responseBuilder
-        .setSuccess(false)
-        .setMessage("Post ID is required")
-        .setStatus(400)
-        .generateResponse();
-    } catch (error) {
-      return this.responseBuilder
-        .setStatus(500)
-        .setData(error)
-        .setSuccess(false)
-        .generateResponse();
+      return this.response({
+        status: false,
+        statusCode: 400,
+        message: 'Post ID is required'
+      });
+    } catch(error) {
+      return this.serverErrorResponse(error);
     }
   }
 
@@ -145,18 +134,18 @@ module.exports = class extends BaseService {
       const { title, body } = req.body;
       const { id } = req.query;
 
-      if (!id) {
-        return this.responseBuilder
-          .setSuccess(false)
-          .setMessage("Post ID is required")
-          .setStatus(400)
-          .generateResponse();
+      if(!id) {
+        return this.response({
+          status: false,
+          statusCode: 400,
+          message: 'Post ID is required'
+        });
       }
 
       const post = await postModel.findOne({ id });
 
-      if (post && post.image) {
-        fs.unlinkSync("public/images/" + post.image);
+      if(post && post.image) {
+        fs.unlinkSync('public/images/' + post.image);
       }
 
       await postModel.findOneAndUpdate(
@@ -164,19 +153,16 @@ module.exports = class extends BaseService {
         {
           title,
           body,
-          image: (req.file && req.file.filename) || null,
+          image: (req.file && req.file.filename) || null
         }
       );
 
-      return this.responseBuilder
-        .setMessage("Post updated successfully")
-        .generateResponse();
-    } catch (error) {
-      return this.responseBuilder
-        .setSuccess(false)
-        .setStatus(500)
-        .setData(error)
-        .generateResponse();
+      return this.response({
+        message: 'Post updated successfully'
+      });
+
+    } catch(error) {
+      return this.serverErrorResponse(error);
     }
   }
 };
