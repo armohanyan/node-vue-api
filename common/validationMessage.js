@@ -12,11 +12,12 @@ module.exports = {
   creditCard: "Please enter a valid credit card number.",
   equalTo: "Please enter the same value again.",
   accept: "Please enter a value with a valid extension.",
-  maxlength: length => `Please enter no more than ${length} characters.`,
-  minlength: length => `Please enter at least ${length} characters.`,
-  rangeLength: (min, max) => `Please enter a value between ${min} and ${max} characters long.`,
+  maxlength: (length) => `Please enter no more than ${length} characters.`,
+  minlength: (length) => `Please enter at least ${length} characters.`,
+  rangeLength: (min, max) =>
+    `Please enter a value between ${min} and ${max} characters long.`,
   range: (min, max) => `Please enter a value between ${min} and ${max}.`,
-  max: max => `Please enter a value less than or equal to ${max}.`,
-  min: min => `Please enter a value greater than or equal to ${min}.`,
-  boolean: `Please enter a valid boolean value`
+  max: (max) => `Please enter a value less than or equal to ${max}.`,
+  min: (min) => `Please enter a value greater than or equal to ${min}.`,
+  boolean: `Please enter a valid boolean value`,
 };

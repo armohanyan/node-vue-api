@@ -1,64 +1,61 @@
 const BaseService = require('./BaseService');
 const userModel = require('../models/User');
 const { verifyToken } = require('../common/token');
-const { ResponseBuilder }  = require('./ResponseBuilder');
 
 class AccountService extends BaseService {
 
   constructor() {
     super();
-    this.responseBuilder = new ResponseBuilder();
   }
 
   async current(req) {
-
     try {
-      const token = req?.cookies?.accessToken || req?.headers?.authorization?.split(' ')[1] || null;
+      const token =
+        req?.cookies?.accessToken ||
+        req?.headers?.authorization?.split(' ')[1] ||
+        null;
 
-      if(!token) {
-        return this.responseBuilder
-                   .setSuccess(false)
-                   .setStatus(400)
-                   .setMessage('Missing data')
-                   .generateResponse();
+      if (!token) {
+        return this.response({
+          status: false,
+          statusCode: 401,
+          message: 'Invalid Token'
+        });
       }
       const isValidToken = verifyToken({ token });
 
-      if(isValidToken) {
+      if (isValidToken) {
         const userId = isValidToken.id;
 
-        const user = await userModel.findOne({ _id: userId });
+        const user = await userModel.findOne({ _id: userId }).exec();
 
-        if(!user) {
-          return this.responseBuilder
-                     .setSuccess(false)
-                     .setStatus(400)
-                     .setMessage('User not found')
-                     .generateResponse();
+        if (!user) {
+          return this.response({
+            status: false,
+            statusCode: 404,
+            message: 'User does not found'
+          });
         }
-        return this.responseBuilder
-                   .setData({
-                     currentAccount: {
-                       firstName: user.firstName,
-                       lastName: user.lastName,
-                       email: user.email,
-                       isVerified: user.isVerified
-                     }
-                   });
+        return this.response({
+          data: {
+            currentAccount: {
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              isVerified: user.isVerified,
+              role: user.isVerified
+            }
+          }
+        });
       }
 
-      return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(401)
-                 .setMessage('Invalid or expire token')
-                 .generateResponse();
-
-    } catch(error) {
-      return this.responseBuilder
-                 .setSuccess(false)
-                 .setStatus(500)
-                 .setData(error)
-                 .generateResponse();
+      return this.response({
+        status: false,
+        statusCode: 401,
+        message: 'Invalid or expire token'
+      });
+    } catch (error) {
+      return this.serverErrorResponse(error);
     }
   }
 }
