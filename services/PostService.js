@@ -23,6 +23,7 @@ module.exports = class extends BaseService {
           id: post._id,
           title: post.title,
           body: post.body,
+          img: post.image,
           created: post.createdAt
         };
       });
@@ -41,6 +42,7 @@ module.exports = class extends BaseService {
   async create(req) {
     try {
       const errors = this.handleErrors(req);
+
       if(errors.hasErrors) {
         return errors.body;
       }
@@ -73,10 +75,10 @@ module.exports = class extends BaseService {
 
   async show(req) {
     try {
-      const { id } = req.query;
+      const { id } = req.params;
 
       if(id) {
-        const post = await postModel.findOne({ _id: id }).exec();
+        const post = await postModel.findOne({ _id: id });
 
         if(!post) {
           return this.response({
@@ -88,10 +90,13 @@ module.exports = class extends BaseService {
 
         return this.response({
           data: {
-            id: post.id,
-            title: post.title,
-            body: post.body,
-            created: post.createdAt
+            post: {
+              id: post.id,
+              title: post.title,
+              body: post.body,
+              img: post.image,
+              created: post.createdAt
+            }
           }
         });
       }
@@ -111,10 +116,19 @@ module.exports = class extends BaseService {
       const { id } = req.body;
 
       if(id) {
+
+        const post = await postModel.findOne({ _id: id });
+
+        if(post && post.image) {
+          if (fs.existsSync('public/images/' + post.image)) {
+            fs.unlinkSync('public/images/' + post.image);
+          }
+        }
+
         await postModel.deleteOne({ _id: id }).exec();
+
         return this.response({
           status: false,
-          statusCode: 400,
           message: 'Deleted'
         });
       }
@@ -131,8 +145,14 @@ module.exports = class extends BaseService {
 
   async update(req) {
     try {
-      const { title, body } = req.body;
-      const { id } = req.query;
+
+      const errors = this.handleErrors(req);
+
+      if(errors.hasErrors) {
+        return errors.body;
+      }
+
+      const { title, body, id } = req.body;
 
       if(!id) {
         return this.response({
@@ -141,21 +161,25 @@ module.exports = class extends BaseService {
           message: 'Post ID is required'
         });
       }
+      const post = await postModel.findOne({ _id: id });
 
-      const post = await postModel.findOne({ id }).exec();
+      if(req.file) {
 
-      if(post && post.image) {
-        fs.unlinkSync('public/images/' + post.image);
+        if(post && post.image) {
+          if (fs.existsSync('public/images/' + post.image)) {
+            fs.unlinkSync('public/images/' + post.image);
+          }
+        }
       }
 
       await postModel.findOneAndUpdate(
-        { id },
+        { _id: id },
         {
           title,
           body,
-          image: (req.file && req.file.filename) || null
+          image: (req.file && req.file.filename) || post.image
         }
-      ).exec();
+      );
 
       return this.response({
         message: 'Post updated successfully'

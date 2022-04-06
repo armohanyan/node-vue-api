@@ -6,12 +6,14 @@ const upload = require("../middlwares/UploadFile");
 
 // Validators
 const CreatePostValidation = require("../common/validation/CreatePostValidation");
+const UpdatePostValidation = require("../common/validation/UpdatePostValidation");
 
 const postController = new PostsController();
 const router = Router();
 
 router.get(
-  "/", requireAuth,
+  "/",
+  requireAuth,
   postController.filterPosts.bind(postController)
 );
 
@@ -23,15 +25,22 @@ router.delete(
 
 router.post(
   "/",
-  roleAuth("basic", "admin"),
+  roleAuth("admin"),
   upload.single("file"),
   CreatePostValidation,
   postController.create.bind(postController)
 );
 
-router.get("/show/",
+router.get("/show/:id",
   requireAuth,
   postController.show.bind(postController)
+);
+
+router.put("/",
+  requireAuth,
+  upload.single("file"),
+  UpdatePostValidation,
+  postController.update.bind(postController)
 );
 
 module.exports = router;

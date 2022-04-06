@@ -119,7 +119,7 @@ module.exports = class AuthService extends BaseService {
       }
 
       return this.response({
-        statusCode: 401,
+        statusCode: 400,
         status: false,
         message: 'Incorrect email and/or  password'
       });
@@ -156,7 +156,7 @@ module.exports = class AuthService extends BaseService {
       await userModel.updateOne({
         email,
         confirmationToken
-      }).exec();
+      });
 
       const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
@@ -203,13 +203,14 @@ module.exports = class AuthService extends BaseService {
           .findOne({
             email,
             confirmationToken: token
-          }).exec();
+          })
+          .exec();
 
         await userModel.updateOne({
           _id: user._id,
           isVerified: true,
           confirmationToken: null
-        }).exec();
+        });
 
         return this.response({
           message: 'Email successfully confirmed'
@@ -249,7 +250,7 @@ module.exports = class AuthService extends BaseService {
         await userModel.updateOne({
           email,
           confirmationToken
-        }).exec();
+        });
 
         mailService.sendMail(
           email,
@@ -259,7 +260,7 @@ module.exports = class AuthService extends BaseService {
         );
 
         return this.response({
-          message: 'Invalid or expire token'
+          message: 'Token was sent to email'
         });
 
       } else {
@@ -300,7 +301,7 @@ module.exports = class AuthService extends BaseService {
       const updateUserConfirmationToken = await userModel.updateOne({
         email,
         confirmationToken
-      }).exec();
+      });
 
       if(updateUserConfirmationToken) {
         const url = `reset-password?email=${email}&token=${confirmationToken}`;
@@ -315,7 +316,6 @@ module.exports = class AuthService extends BaseService {
 
       return this.response({
         status: false,
-        statusCode: 404,
         message: "Token was sent to email"
       });
     } catch(error) {
@@ -340,7 +340,7 @@ module.exports = class AuthService extends BaseService {
 
       if(isTokenValid) {
         const { email } = isTokenValid;
-        const user = await userModel.findOne({ email }).exec();
+        const user = await userModel.findOne({ email });
 
         if(!user) {
           return this.response({
@@ -354,12 +354,12 @@ module.exports = class AuthService extends BaseService {
           email,
           password,
           confirmationToken: null
-        }).exec();
+        });
 
         if(resetUserPassword) {
           return this.response({
             status: false,
-            statusCode: 404,
+            statusCode: 200,
             message: "Password reset successfully"
           });
         }
