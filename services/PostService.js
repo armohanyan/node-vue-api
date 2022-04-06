@@ -76,7 +76,7 @@ module.exports = class extends BaseService {
       const { id } = req.query;
 
       if(id) {
-        const post = await postModel.findOne({ _id: id });
+        const post = await postModel.findOne({ _id: id }).exec();
 
         if(!post) {
           return this.response({
@@ -142,7 +142,7 @@ module.exports = class extends BaseService {
         });
       }
 
-      const post = await postModel.findOne({ id });
+      const post = await postModel.findOne({ id }).exec();
 
       if(post && post.image) {
         fs.unlinkSync('public/images/' + post.image);
@@ -155,7 +155,7 @@ module.exports = class extends BaseService {
           body,
           image: (req.file && req.file.filename) || null
         }
-      );
+      ).exec();
 
       return this.response({
         message: 'Post updated successfully'

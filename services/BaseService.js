@@ -5,33 +5,28 @@ module.exports = class BaseService {
   handleErrors(request) {
     const { errors } = validationResult(request);
 
-    if (errors && errors.length) {
-      const filteredErrors = {
-        property: errors[0].param,
-        message: errors[0].msg,
-      };
-
-      return {
-        hasErrors: true,
+    return {
+      hasErrors: errors && errors.length,
+      ...(errors && errors.length ? {
         body: {
           success: false,
           statusCode: 400,
-          validationError: filteredErrors
+          validationError: {
+            property: errors[0].param,
+            message: errors[0].msg,
+          }
         }
-      };
+      } : {})
     }
-    return {
-      hasErrors: false,
-    };
   }
 
   response({
-    status = true,
-    statusCode= 200,
-    data = {},
-    message =  "",
-    validationError = {}
-  }) {
+             status = true,
+             statusCode = 200,
+             data = {},
+             message = "",
+             validationError = {}
+           }) {
     return {
       status,
       statusCode,

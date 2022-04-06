@@ -15,7 +15,7 @@ class AccountService extends BaseService {
         req?.headers?.authorization?.split(' ')[1] ||
         null;
 
-      if(!token) {
+      if (!token) {
         return this.response({
           status: false,
           statusCode: 401,
@@ -24,12 +24,12 @@ class AccountService extends BaseService {
       }
       const isValidToken = verifyToken({ token });
 
-      if(isValidToken) {
+      if (isValidToken) {
         const userId = isValidToken.id;
 
-        const user = await userModel.findOne({ _id: userId });
+        const user = await userModel.findOne({ _id: userId }).exec();
 
-        if(!user) {
+        if (!user) {
           return this.response({
             status: false,
             statusCode: 404,
@@ -54,7 +54,7 @@ class AccountService extends BaseService {
         statusCode: 401,
         message: 'Invalid or expire token'
       });
-    } catch(error) {
+    } catch (error) {
       return this.serverErrorResponse(error);
     }
   }

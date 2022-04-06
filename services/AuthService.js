@@ -156,7 +156,7 @@ module.exports = class AuthService extends BaseService {
       await userModel.updateOne({
         email,
         confirmationToken
-      });
+      }).exec();
 
       const url = `verify-email?email=${email}&token=${confirmationToken}`;
 
@@ -203,14 +203,13 @@ module.exports = class AuthService extends BaseService {
           .findOne({
             email,
             confirmationToken: token
-          })
-          .exec();
+          }).exec();
 
         await userModel.updateOne({
           _id: user._id,
           isVerified: true,
           confirmationToken: null
-        });
+        }).exec();
 
         return this.response({
           message: 'Email successfully confirmed'
@@ -250,7 +249,7 @@ module.exports = class AuthService extends BaseService {
         await userModel.updateOne({
           email,
           confirmationToken
-        });
+        }).exec();
 
         mailService.sendMail(
           email,
@@ -301,7 +300,7 @@ module.exports = class AuthService extends BaseService {
       const updateUserConfirmationToken = await userModel.updateOne({
         email,
         confirmationToken
-      });
+      }).exec();
 
       if(updateUserConfirmationToken) {
         const url = `reset-password?email=${email}&token=${confirmationToken}`;
@@ -341,7 +340,7 @@ module.exports = class AuthService extends BaseService {
 
       if(isTokenValid) {
         const { email } = isTokenValid;
-        const user = await userModel.findOne({ email });
+        const user = await userModel.findOne({ email }).exec();
 
         if(!user) {
           return this.response({
@@ -355,7 +354,7 @@ module.exports = class AuthService extends BaseService {
           email,
           password,
           confirmationToken: null
-        });
+        }).exec();
 
         if(resetUserPassword) {
           return this.response({
