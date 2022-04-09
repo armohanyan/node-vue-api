@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const path = require('path');
 
 // env
 require("dotenv").config();
@@ -29,18 +30,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static("public"));
+
+
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:8080"],
+    origin: ["http://localhost:8081"],
   })
 );
-// app.use(fileUpload());
-
 // use routes
+
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/account", accountRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(__dirname + '/dist/'));
+
+  app.get(/.*/, (req, res) => res.sendFile(__dirname + '/dist/index.html'));
+}
 
 // listen port
 app.listen(port, () => console.log(`Server started on port ${port}`));
